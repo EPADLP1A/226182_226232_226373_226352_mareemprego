@@ -1,0 +1,19 @@
+# Ficheiros compilados
+*.o
+*.exe
+*.out
+
+# Pastas de compilação
+build/
+bin/
+
+# Editores
+.vscode/
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
