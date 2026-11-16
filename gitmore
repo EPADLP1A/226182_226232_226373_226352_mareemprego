@@ -1,0 +1,24 @@
+.gitignore
+# Compiled files
+*.o
+*.obj
+*.exe
+*.out
+*.dll
+
+# Build folders
+build/
+bin/
+obj/
+
+# IDEs
+.vscode/
+.idea/
+.vs/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
