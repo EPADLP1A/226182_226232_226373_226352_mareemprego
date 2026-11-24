@@ -60,8 +60,10 @@ main{max-width:1040px;margin:0 auto;padding:0 20px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;cursor:pointer;border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:8px 16px;font-weight:500}
 .chip[aria-pressed="true"]{background:var(--pick);border-color:var(--pick);color:#fff}
-.sel{display:flex;gap:10px;flex-wrap:wrap}
+.sel{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .sel select{flex:1;min-width:160px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surf)}
+.near{flex:none;padding:10px 16px;font-size:15px}
+.near[aria-pressed="true"]{background:rgba(242,92,42,.8);border-color:rgba(255,255,255,.4)}
 .head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
 .head h2{margin:0;font-size:22px;letter-spacing:-.02em}
 .head span{color:var(--mute)}
@@ -124,13 +126,16 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
 .pact{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
 .pside ul{margin:6px 0 0;padding-left:20px;color:var(--mute)}
 .tag.ok{background:#CDEBDD;color:#0B4A2E}
+.tag.dist{background:rgba(23,96,138,.14);color:var(--pick);font-weight:600}
 /* Tema escuro: preto e azul */
 :root[data-theme="dark"] .glass-t{background-color:rgba(4,12,32,.62)}
-:root[data-theme="dark"] .btn.pri{background-color:rgba(47,107,255,.82)}
+:root[data-theme="dark"] .btn.pri,:root[data-theme="dark"] .near[aria-pressed="true"]{background-color:rgba(47,107,255,.82)}
+:root[data-theme="dark"] .tag.dist{background:rgba(47,107,255,.2)}
 :root[data-theme="dark"] .hero{background:radial-gradient(900px 400px at 85% -10%,#1F4FD8 0,transparent 60%),linear-gradient(165deg,var(--sado),var(--sado2))}
 @media (prefers-color-scheme:dark){
 :root:not([data-theme="light"]) .glass-t{background-color:rgba(4,12,32,.62)}
-:root:not([data-theme="light"]) .btn.pri{background-color:rgba(47,107,255,.82)}
+:root:not([data-theme="light"]) .btn.pri,:root:not([data-theme="light"]) .near[aria-pressed="true"]{background-color:rgba(47,107,255,.82)}
+:root:not([data-theme="light"]) .tag.dist{background:rgba(47,107,255,.2)}
 :root:not([data-theme="light"]) .hero{background:radial-gradient(900px 400px at 85% -10%,#1F4FD8 0,transparent 60%),linear-gradient(165deg,var(--sado),var(--sado2))}
 }
 .note{color:var(--mute);font-size:14px}
@@ -179,7 +184,9 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
         <option value="recent">Mais recentes</option>
         <option value="salary">Salário mais alto</option>
         <option value="relevance">Relevância</option>
+        <option value="distance" hidden>Mais próximas</option>
       </select>
+      <button type="button" class="btn near" id="near" aria-pressed="false">Perto de mim</button>
     </div>
   </div>
   <div class="head" id="head"><h2 id="title">Ofertas recentes</h2><span id="count"></span></div>
@@ -306,14 +313,47 @@ const fmtSal=j=>{
   if(hasMax)return `Até ${fmtNum(j.salarioMax)} €/mês`;
   return "Salário a combinar";
 };
+const COORDS={
+"Porto":[41.1579,-8.6291],"Braga":[41.5454,-8.4265],"Guimarães":[41.4425,-8.2918],"Vila Nova de Gaia":[41.1239,-8.6118],
+"Matosinhos":[41.1821,-8.6891],"Maia":[41.2357,-8.6199],"Vila do Conde":[41.3540,-8.7438],"Póvoa de Varzim":[41.3804,-8.7609],
+"Famalicão":[41.4080,-8.5198],"Viana do Castelo":[41.6932,-8.8329],"Vila Real":[41.3006,-7.7441],"Bragança":[41.8061,-6.7567],
+"Chaves":[41.7402,-7.4688],"Peso da Régua":[41.1631,-7.7888],"Barcelos":[41.5318,-8.6151],"Amarante":[41.2698,-8.0825],
+"Paredes":[41.2052,-8.3304],"Coimbra":[40.2033,-8.4103],"Aveiro":[40.6405,-8.6538],"Viseu":[40.6566,-7.9125],
+"Leiria":[39.7436,-8.8071],"Guarda":[40.5373,-7.2658],"Castelo Branco":[39.8222,-7.4909],"Covilhã":[40.2806,-7.5043],
+"Figueira da Foz":[40.1509,-8.8618],"Marinha Grande":[39.7478,-8.9323],"Caldas da Rainha":[39.4033,-9.1384],"Tomar":[39.6020,-8.4092],
+"Lisboa":[38.7223,-9.1393],"Setúbal":[38.5244,-8.8882],"Almada":[38.6790,-9.1569],"Seixal":[38.6400,-9.1014],
+"Barreiro":[38.6631,-9.0724],"Amadora":[38.7538,-9.2308],"Sintra":[38.8029,-9.3817],"Cascais":[38.6979,-9.4215],
+"Oeiras":[38.6910,-9.3109],"Loures":[38.8309,-9.1684],"Odivelas":[38.7927,-9.1838],"Vila Franca de Xira":[38.9553,-8.9897],
+"Montijo":[38.7067,-8.9739],"Moita":[38.6508,-8.9904],"Palmela":[38.5690,-8.9013],"Sesimbra":[38.4445,-9.1015],
+"Alcochete":[38.7553,-8.9609],"Santarém":[39.2362,-8.6860],"Torres Vedras":[39.0911,-9.2586],"Abrantes":[39.4667,-8.1972],
+"Évora":[38.5714,-7.9135],"Beja":[38.0151,-7.8632],"Portalegre":[39.2967,-7.4285],"Sines":[37.9562,-8.8698],
+"Elvas":[38.8815,-7.1628],"Santiago do Cacém":[38.0160,-8.6952],"Estremoz":[38.8424,-7.5861],"Faro":[37.0194,-7.9322],
+"Portimão":[37.1362,-8.5377],"Lagos":[37.1028,-8.6730],"Albufeira":[37.0891,-8.2479],"Loulé":[37.1378,-8.0195],
+"Tavira":[37.1273,-7.6486],"Olhão":[37.0260,-7.8411],"Silves":[37.1892,-8.4384],"Funchal":[32.6669,-16.9241],
+"Câmara de Lobos":[32.6504,-16.9767],"Machico":[32.7186,-16.7660],"Ponta Delgada":[37.7412,-25.6756],
+"Angra do Heroísmo":[38.6558,-27.2177],"Horta":[38.5326,-28.6292],"Ribeira Grande":[37.8211,-25.5197]
+};
 const PAGE_SIZE=20;
 const SAL_STEPS=[900,1000,1200,1500,1800,2000];
-const SORT_TITLES={recent:"Ofertas recentes",salary:"Ofertas por salário",relevance:"Ofertas por relevância"};
+const SORT_TITLES={recent:"Ofertas recentes",salary:"Ofertas por salário",relevance:"Ofertas por relevância",distance:"Ofertas perto de si"};
 let st={q:"",city:CITIES[0],area:"",type:"",cid:"",salMin:0,sort:"recent",tab:"o"},cur=null,saved=new Set(),shown=PAGE_SIZE;
+let userPos=null,geoBusy=false,prevSort="recent";
 const resetPage=()=>{shown=PAGE_SIZE};
 try{saved=new Set(JSON.parse(localStorage.getItem("mare-saved")||"[]"))}catch(e){}
 const persist=()=>{try{localStorage.setItem("mare-saved",JSON.stringify([...saved]))}catch(e){}};
 const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+
+function distKm(lat1,lon1,lat2,lon2){
+  const R=6371,rad=Math.PI/180,dLat=(lat2-lat1)*rad,dLon=(lon2-lon1)*rad;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+function jobDist(j){
+  if(!userPos)return null;
+  const pt=COORDS[j.m];
+  return pt?distKm(userPos.lat,userPos.lon,pt[0],pt[1]):null;
+}
+const fmtDist=km=>km<1?"< 1 km":km<10?`${km.toFixed(1).replace(".",",")} km`:`${Math.round(km)} km`;
 
 function relevanceScore(j){
   let score=0;
@@ -351,6 +391,16 @@ function relevanceScore(j){
 }
 
 function sortJobs(arr){
+  if(st.sort==="distance"&&userPos){
+    const dists=new Map(arr.map(j=>[j.id,jobDist(j)]));
+    return arr.sort((a,b)=>{
+      const da=dists.get(a.id),db=dists.get(b.id);
+      if(da==null&&db==null)return (a.d-b.d)||(a.id-b.id);
+      if(da==null)return 1;
+      if(db==null)return -1;
+      return (da-db)||(a.d-b.d)||(a.id-b.id);
+    });
+  }
   if(st.sort==="salary")return arr.sort((a,b)=>(b.salarioMax-a.salarioMax)||(b.salarioMin-a.salarioMin)||(a.d-b.d)||(a.id-b.id));
   if(st.sort==="relevance"){
     const scores=new Map(arr.map(j=>[j.id,relevanceScore(j)]));
@@ -379,7 +429,17 @@ function fillCities(){
 fillCities();
 $("chips").innerHTML=CITIES.map(c=>`<button class="chip" data-city="${c}" aria-pressed="${c===st.city}">${c}</button>`).join("");
 
-const card=j=>`<article class="card"><button class="open" data-id="${j.id}">${j.t}</button><p class="co">${j.c}, ${j.m}</p><div class="tags"><span class="tag">${j.k}</span><span class="tag">${j.r}</span><span class="tag">${j.a}</span>${applied.has(j.id)?`<span class="tag ok">Candidatado</span>`:""}</div><p class="sal">${fmtSal(j)}<small>Há ${j.d} ${j.d>1?"dias":"dia"}</small></p><button class="btn icon save" data-save="${j.id}" aria-pressed="${saved.has(j.id)}" aria-label="${saved.has(j.id)?"Remover das guardadas":"Guardar oferta"}">${saved.has(j.id)?"♥":"♡"}</button></article>`;
+const card=j=>{
+  const d=jobDist(j);
+  return `<article class="card"><button class="open" data-id="${j.id}">${j.t}</button><p class="co">${j.c}, ${j.m}</p><div class="tags"><span class="tag">${j.k}</span><span class="tag">${j.r}</span><span class="tag">${j.a}</span>${d!=null?`<span class="tag dist">${fmtDist(d)}</span>`:""}${applied.has(j.id)?`<span class="tag ok">Candidatado</span>`:""}</div><p class="sal">${fmtSal(j)}<small>Há ${j.d} ${j.d>1?"dias":"dia"}</small></p><button class="btn icon save" data-save="${j.id}" aria-pressed="${saved.has(j.id)}" aria-label="${saved.has(j.id)?"Remover das guardadas":"Guardar oferta"}">${saved.has(j.id)?"♥":"♡"}</button></article>`;
+};
+
+function syncNearUI(){
+  const distOpt=$("sort").querySelector('option[value="distance"]');
+  if(distOpt)distOpt.hidden=!userPos;
+  $("sort").value=(st.sort==="distance"&&!userPos)?"recent":st.sort;
+  $("near").setAttribute("aria-pressed",st.sort==="distance"&&userPos?"true":"false");
+}
 
 function render(){
   const g=st.tab==="g";
@@ -388,7 +448,7 @@ function render(){
   $("t-g").setAttribute("aria-current",g?"page":"false");
   $("t-g").textContent=saved.size?`Guardadas (${saved.size})`:"Guardadas";
   document.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.city===st.city));
-  $("sort").value=st.sort;
+  syncNearUI();
   let r=sortJobs(J.filter(j=>{
     if(g)return saved.has(j.id);
     const hay=norm([j.t,j.c,j.a,j.m].join(" "));
@@ -415,8 +475,47 @@ function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout
 
 function openJob(id){
   cur=J.find(j=>j.id===id);
-  $("dbody").innerHTML=`<h2 id="dt">${cur.t}</h2><p class="co">${cur.c}, ${cur.m}</p><div class="tags"><span class="tag">${cur.k}</span><span class="tag">${cur.r}</span><span class="tag">${cur.a}</span></div><p class="sal" style="margin-top:14px">${fmtSal(cur)}</p><h3>Sobre a oferta</h3><p>${cur.p}</p><h3>Requisitos</h3><ul>${cur.q.map(x=>`<li>${x}</li>`).join("")}</ul><p class="note">${noteText()}</p>`;
+  const d=jobDist(cur);
+  $("dbody").innerHTML=`<h2 id="dt">${cur.t}</h2><p class="co">${cur.c}, ${cur.m}</p><div class="tags"><span class="tag">${cur.k}</span><span class="tag">${cur.r}</span><span class="tag">${cur.a}</span>${d!=null?`<span class="tag dist">${fmtDist(d)}</span>`:""}</div><p class="sal" style="margin-top:14px">${fmtSal(cur)}</p><h3>Sobre a oferta</h3><p>${cur.p}</p><h3>Requisitos</h3><ul>${cur.q.map(x=>`<li>${x}</li>`).join("")}</ul><p class="note">${noteText()}</p>`;
   syncSave();syncApply();$("dlg").showModal();$("dbody").scrollTop=0;
+}
+
+function toggleNear(){
+  if(geoBusy)return;
+  if(st.sort==="distance"&&userPos){
+    st.sort=prevSort!=="distance"?prevSort:"recent";
+    resetPage();render();return;
+  }
+  if(userPos){
+    if(st.sort!=="distance")prevSort=st.sort;
+    st.sort="distance";resetPage();render();
+    toast("Ofertas ordenadas por proximidade");return;
+  }
+  if(!navigator.geolocation){
+    toast("Geolocalização não suportada neste navegador");return;
+  }
+  geoBusy=true;
+  $("near").disabled=true;
+  $("near").textContent="A localizar…";
+  navigator.geolocation.getCurrentPosition(pos=>{
+    geoBusy=false;
+    $("near").disabled=false;
+    $("near").textContent="Perto de mim";
+    userPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
+    if(st.sort!=="distance")prevSort=st.sort;
+    st.sort="distance";
+    resetPage();render();
+    toast("Ofertas ordenadas por proximidade");
+  },err=>{
+    geoBusy=false;
+    $("near").disabled=false;
+    $("near").textContent="Perto de mim";
+    syncNearUI();
+    const msg=err&&err.code===1?"Localização recusada. As ofertas continuam disponíveis normalmente."
+      :err&&err.code===3?"Tempo esgotado ao obter a localização."
+      :"Não foi possível obter a sua localização.";
+    toast(msg);
+  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
 }
 
 $("list").addEventListener("click",e=>{
@@ -427,12 +526,13 @@ $("list").addEventListener("click",e=>{
   else if(go){st.tab="o";resetPage();render()}
 });
 $("loadmore").onclick=()=>{shown+=PAGE_SIZE;render()};
+$("near").onclick=toggleNear;
 $("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){st.city=b.dataset.city;st.cid="";resetPage();fillCities();render()}});
 $("area").onchange=e=>{st.area=e.target.value;resetPage();render()};
 $("cid").onchange=e=>{st.cid=e.target.value;resetPage();render()};
 $("type").onchange=e=>{st.type=e.target.value;resetPage();render()};
 $("salmin").onchange=e=>{st.salMin=Number(e.target.value)||0;resetPage();render()};
-$("sort").onchange=e=>{st.sort=e.target.value;resetPage();render()};
+$("sort").onchange=e=>{st.sort=e.target.value;if(st.sort!=="distance")prevSort=st.sort;resetPage();render()};
 $("q").addEventListener("input",e=>{st.q=e.target.value.trim();resetPage();render()});
 $("form").addEventListener("submit",e=>{e.preventDefault();st.q=$("q").value.trim();resetPage();render();$("filters").scrollIntoView({behavior:"smooth"})});
 $("t-o").onclick=()=>{st.tab="o";resetPage();render();scrollTo({top:0,behavior:"smooth"})};
