@@ -409,9 +409,14 @@ function sortJobs(arr){
   return arr.sort((a,b)=>(a.d-b.d)||(a.id-b.id));
 }
 
+const AREAS=[...new Set(J.map(j=>j.a))].sort();
+const TYPES=[...new Set(J.map(j=>j.k))];
+const VALID_SORTS=new Set(["recent","salary","relevance","distance"]);
+let typingHistory=false;
+
 function fillSelect(el,first,vals){el.innerHTML=`<option value="">${first}</option>`+vals.map(v=>`<option>${v}</option>`).join("")}
-fillSelect($("area"),"Todas as áreas",[...new Set(J.map(j=>j.a))].sort());
-fillSelect($("type"),"Todos os contratos",[...new Set(J.map(j=>j.k))]);
+fillSelect($("area"),"Todas as áreas",AREAS);
+fillSelect($("type"),"Todos os contratos",TYPES);
 function fillSalMin(){
   const opts=[...SAL_STEPS];
   if(st.salMin>0&&!opts.includes(st.salMin)){opts.push(st.salMin);opts.sort((a,b)=>a-b)}
@@ -428,6 +433,62 @@ function fillCities(){
 }
 fillCities();
 $("chips").innerHTML=CITIES.map(c=>`<button class="chip" data-city="${c}" aria-pressed="${c===st.city}">${c}</button>`).join("");
+
+function buildSearch(){
+  const p=new URLSearchParams();
+  if(st.tab!=="o")p.set("tab",st.tab);
+  if(st.q)p.set("q",st.q);
+  if(st.city!==CITIES[0])p.set("regiao",st.city);
+  if(st.cid)p.set("cidade",st.cid);
+  if(st.area)p.set("area",st.area);
+  if(st.type)p.set("contrato",st.type);
+  if(st.salMin>0)p.set("salario",String(st.salMin));
+  if(st.sort!=="recent"&&!(st.sort==="distance"&&!userPos))p.set("ordem",st.sort);
+  const qs=p.toString();
+  return qs?"?"+qs:"";
+}
+function syncURL(replace=false){
+  const nextSearch=buildSearch();
+  if(nextSearch===location.search)return;
+  const nextUrl=location.pathname+nextSearch+location.hash;
+  try{
+    if(replace)history.replaceState(null,"",nextUrl);
+    else history.pushState(null,"",nextUrl);
+  }catch(e){}
+}
+function readURL(){
+  const p=new URLSearchParams(location.search);
+  const tab=p.get("tab");
+  st.tab=(tab==="g"||tab==="p")?tab:"o";
+  st.q=(p.get("q")||"").trim();
+  const reg=p.get("regiao")||"";
+  st.city=CITIES.includes(reg)?reg:CITIES[0];
+  const cid=p.get("cidade")||"";
+  st.cid=(cid&&REG[cid]&&(st.city===CITIES[0]||REG[cid]===st.city))?cid:"";
+  const area=p.get("area")||"";
+  st.area=AREAS.includes(area)?area:"";
+  const type=p.get("contrato")||"";
+  st.type=TYPES.includes(type)?type:"";
+  const sal=Number(p.get("salario"));
+  st.salMin=(Number.isFinite(sal)&&sal>0)?Math.floor(sal):0;
+  const ord=p.get("ordem")||"recent";
+  st.sort=(VALID_SORTS.has(ord)&&(ord!=="distance"||userPos))?ord:"recent";
+  if(st.sort!=="distance")prevSort=st.sort;
+}
+function syncControls(){
+  $("q").value=st.q;
+  fillCities();
+  $("area").value=st.area;
+  $("type").value=st.type;
+  fillSalMin();
+  syncNearUI();
+}
+function commitChange(replace=false){
+  typingHistory=false;
+  resetPage();
+  syncURL(replace);
+  render();
+}
 
 const card=j=>{
   const d=jobDist(j);
@@ -484,11 +545,11 @@ function toggleNear(){
   if(geoBusy)return;
   if(st.sort==="distance"&&userPos){
     st.sort=prevSort!=="distance"?prevSort:"recent";
-    resetPage();render();return;
+    commitChange();return;
   }
   if(userPos){
     if(st.sort!=="distance")prevSort=st.sort;
-    st.sort="distance";resetPage();render();
+    st.sort="distance";commitChange();
     toast("Ofertas ordenadas por proximidade");return;
   }
   if(!navigator.geolocation){
@@ -504,7 +565,7 @@ function toggleNear(){
     userPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
     if(st.sort!=="distance")prevSort=st.sort;
     st.sort="distance";
-    resetPage();render();
+    commitChange();
     toast("Ofertas ordenadas por proximidade");
   },err=>{
     geoBusy=false;
@@ -522,24 +583,40 @@ $("list").addEventListener("click",e=>{
   const s=e.target.closest("[data-save]"),o=e.target.closest("[data-id]"),c=e.target.closest("[data-clear]"),go=e.target.closest("[data-go]");
   if(s)toggle(+s.dataset.save);
   else if(o)openJob(+o.dataset.id);
-  else if(c){st={...st,q:"",city:CITIES[0],cid:"",area:"",type:"",salMin:0};resetPage();fillCities();fillSalMin();$("q").value="";$("area").value="";$("type").value="";render()}
-  else if(go){st.tab="o";resetPage();render()}
+  else if(c){st={...st,q:"",city:CITIES[0],cid:"",area:"",type:"",salMin:0};syncControls();commitChange()}
+  else if(go){st.tab="o";commitChange()}
 });
 $("loadmore").onclick=()=>{shown+=PAGE_SIZE;render()};
 $("near").onclick=toggleNear;
-$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){st.city=b.dataset.city;st.cid="";resetPage();fillCities();render()}});
-$("area").onchange=e=>{st.area=e.target.value;resetPage();render()};
-$("cid").onchange=e=>{st.cid=e.target.value;resetPage();render()};
-$("type").onchange=e=>{st.type=e.target.value;resetPage();render()};
-$("salmin").onchange=e=>{st.salMin=Number(e.target.value)||0;resetPage();render()};
-$("sort").onchange=e=>{st.sort=e.target.value;if(st.sort!=="distance")prevSort=st.sort;resetPage();render()};
-$("q").addEventListener("input",e=>{st.q=e.target.value.trim();resetPage();render()});
-$("form").addEventListener("submit",e=>{e.preventDefault();st.q=$("q").value.trim();resetPage();render();$("filters").scrollIntoView({behavior:"smooth"})});
-$("t-o").onclick=()=>{st.tab="o";resetPage();render();scrollTo({top:0,behavior:"smooth"})};
-$("t-g").onclick=()=>{st.tab="g";resetPage();render();scrollTo({top:0,behavior:"smooth"})};
+$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){st.city=b.dataset.city;st.cid="";fillCities();commitChange()}});
+$("area").onchange=e=>{st.area=e.target.value;commitChange()};
+$("cid").onchange=e=>{st.cid=e.target.value;commitChange()};
+$("type").onchange=e=>{st.type=e.target.value;commitChange()};
+$("salmin").onchange=e=>{st.salMin=Number(e.target.value)||0;commitChange()};
+$("sort").onchange=e=>{st.sort=e.target.value;if(st.sort!=="distance")prevSort=st.sort;commitChange()};
+$("q").addEventListener("input",e=>{
+  st.q=e.target.value.trim();
+  resetPage();
+  syncURL(typingHistory);
+  typingHistory=true;
+  render();
+});
+$("q").addEventListener("blur",()=>{typingHistory=false});
+$("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  st.q=$("q").value.trim();
+  resetPage();
+  syncURL(typingHistory);
+  typingHistory=false;
+  render();
+  $("filters").scrollIntoView({behavior:"smooth"});
+});
+$("t-o").onclick=()=>{st.tab="o";commitChange();scrollTo({top:0,behavior:"smooth"})};
+$("t-g").onclick=()=>{st.tab="g";commitChange();scrollTo({top:0,behavior:"smooth"})};
 $("dclose").onclick=()=>$("dlg").close();
 $("dsave").onclick=()=>toggle(cur.id);
 $("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))$("dlg").close()});
+window.addEventListener("popstate",()=>{typingHistory=false;readURL();resetPage();syncControls();render()});
 
 /* Perfil e CV */
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -636,12 +713,14 @@ $("pfile").onchange=e=>{
   rd.readAsDataURL(f);
 };
 $("prmphoto").onclick=()=>{P.foto="";store("mare-profile",P);drawCV()};
-$("t-p").onclick=()=>{st.tab="p";render();scrollTo({top:0,behavior:"smooth"})};
+$("t-p").onclick=()=>{st.tab="p";commitChange();scrollTo({top:0,behavior:"smooth"})};
 $("dapply").onclick=()=>{
-  if(!profileOK()){$("dlg").close();st.tab="p";render();scrollTo({top:0});toast("Crie primeiro o seu perfil e CV para se candidatar");return}
+  if(!profileOK()){$("dlg").close();st.tab="p";commitChange();scrollTo({top:0});toast("Crie primeiro o seu perfil e CV para se candidatar");return}
   applied.add(cur.id);store("mare-applied",[...applied]);$("dlg").close();render();
   toast(`Candidatura a “${cur.t}” enviada com o seu CV`);
 };
+readURL();
+syncControls();
 render();
 </script>
 </body>
