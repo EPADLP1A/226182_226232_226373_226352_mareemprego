@@ -173,6 +173,11 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
       <select id="area" aria-label="Área"></select>
       <select id="type" aria-label="Tipo de contrato"></select>
       <select id="salmin" aria-label="Salário mínimo"></select>
+      <select id="sort" aria-label="Ordenar ofertas">
+        <option value="recent">Mais recentes</option>
+        <option value="salary">Salário mais alto</option>
+        <option value="relevance">Relevância</option>
+      </select>
     </div>
   </div>
   <div class="head" id="head"><h2 id="title">Ofertas recentes</h2><span id="count"></span></div>
@@ -296,10 +301,55 @@ const fmtSal=j=>{
   return "Salário a combinar";
 };
 const SAL_STEPS=[900,1000,1200,1500,1800,2000];
-let st={q:"",city:CITIES[0],area:"",type:"",cid:"",salMin:0,tab:"o"},cur=null,saved=new Set();
+const SORT_TITLES={recent:"Ofertas recentes",salary:"Ofertas por salário",relevance:"Ofertas por relevância"};
+let st={q:"",city:CITIES[0],area:"",type:"",cid:"",salMin:0,sort:"recent",tab:"o"},cur=null,saved=new Set();
 try{saved=new Set(JSON.parse(localStorage.getItem("mare-saved")||"[]"))}catch(e){}
 const persist=()=>{try{localStorage.setItem("mare-saved",JSON.stringify([...saved]))}catch(e){}};
 const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+
+function relevanceScore(j){
+  let score=0;
+  const words=st.q?norm(st.q).split(/\s+/).filter(Boolean):[];
+  const title=norm(j.t),comp=norm(j.c),city=norm(j.m),area=norm(j.a),desc=norm(j.p+" "+j.q.join(" "));
+  if(words.length){
+    const fullQ=words.join(" ");
+    if(title===fullQ)score+=120;
+    else if(title.startsWith(fullQ))score+=60;
+    for(const w of words){
+      if(title.includes(w)){score+=35;if(title.split(/\W+/).some(tw=>tw.startsWith(w)))score+=15}
+      if(area.includes(w))score+=20;
+      if(city.includes(w))score+=18;
+      if(comp.includes(w))score+=12;
+      if(desc.includes(w))score+=6;
+    }
+  }
+  if(typeof P!=="undefined"&&P){
+    if(P.titulo&&P.titulo.trim()){
+      for(const w of norm(P.titulo).split(/\s+/).filter(x=>x.length>2)){
+        if(title.includes(w))score+=25;
+        if(area.includes(w))score+=10;
+      }
+    }
+    if(P.cidade&&P.cidade.trim()&&norm(P.cidade.trim())===city)score+=20;
+    if(P.skills&&P.skills.trim()){
+      for(const sk of P.skills.split(",").map(s=>norm(s.trim())).filter(x=>x.length>2)){
+        if(title.includes(sk)||desc.includes(sk)||area.includes(sk))score+=10;
+      }
+    }
+  }
+  score+=Math.max(0,10-j.d);
+  score+=(j.salarioMax||0)/1000;
+  return score;
+}
+
+function sortJobs(arr){
+  if(st.sort==="salary")return arr.sort((a,b)=>(b.salarioMax-a.salarioMax)||(b.salarioMin-a.salarioMin)||(a.d-b.d)||(a.id-b.id));
+  if(st.sort==="relevance"){
+    const scores=new Map(arr.map(j=>[j.id,relevanceScore(j)]));
+    return arr.sort((a,b)=>(scores.get(b.id)-scores.get(a.id))||(a.d-b.d)||(a.id-b.id));
+  }
+  return arr.sort((a,b)=>(a.d-b.d)||(a.id-b.id));
+}
 
 function fillSelect(el,first,vals){el.innerHTML=`<option value="">${first}</option>`+vals.map(v=>`<option>${v}</option>`).join("")}
 fillSelect($("area"),"Todas as áreas",[...new Set(J.map(j=>j.a))].sort());
@@ -330,13 +380,14 @@ function render(){
   $("t-g").setAttribute("aria-current",g?"page":"false");
   $("t-g").textContent=saved.size?`Guardadas (${saved.size})`:"Guardadas";
   document.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.city===st.city));
-  let r=J.filter(j=>{
+  $("sort").value=st.sort;
+  let r=sortJobs(J.filter(j=>{
     if(g)return saved.has(j.id);
     const hay=norm([j.t,j.c,j.a,j.m].join(" "));
     return (!st.q||norm(st.q).split(/\s+/).every(w=>hay.includes(w)))
       &&(st.city===CITIES[0]||REG[j.m]===st.city)&&(!st.cid||j.m===st.cid)&&(!st.area||j.a===st.area)&&(!st.type||j.k===st.type)&&(!st.salMin||j.salarioMin>=st.salMin);
-  }).sort((a,b)=>a.d-b.d);
-  $("title").textContent=g?"Ofertas guardadas":"Ofertas recentes";
+  }));
+  $("title").textContent=g?"Ofertas guardadas":(SORT_TITLES[st.sort]||"Ofertas recentes");
   $("count").textContent=g?"":`${r.length} ${r.length===1?"oferta":"ofertas"}${st.cid?" em "+st.cid:st.city===CITIES[0]?" em Portugal":" na região "+st.city}`;
   $("list").innerHTML=r.length?r.map(card).join(""):(g
     ?`<div class="empty"><p>Ainda não guardou nenhuma oferta. Toque em ♡ numa oferta para a guardar aqui.</p><button class="btn" data-go="o">Ver ofertas</button></div>`
@@ -368,6 +419,7 @@ $("area").onchange=e=>{st.area=e.target.value;render()};
 $("cid").onchange=e=>{st.cid=e.target.value;render()};
 $("type").onchange=e=>{st.type=e.target.value;render()};
 $("salmin").onchange=e=>{st.salMin=Number(e.target.value)||0;render()};
+$("sort").onchange=e=>{st.sort=e.target.value;render()};
 $("q").addEventListener("input",e=>{st.q=e.target.value.trim();render()});
 $("form").addEventListener("submit",e=>{e.preventDefault();st.q=$("q").value.trim();render();$("filters").scrollIntoView({behavior:"smooth"})});
 $("t-o").onclick=()=>{st.tab="o";render();scrollTo({top:0,behavior:"smooth"})};
