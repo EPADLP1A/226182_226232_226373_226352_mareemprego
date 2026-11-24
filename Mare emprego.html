@@ -81,6 +81,8 @@ main{max-width:1040px;margin:0 auto;padding:0 20px}
 .save{position:absolute;top:14px;right:14px;z-index:2}
 .empty{grid-column:1/-1;background:var(--surf);border:1px dashed var(--line);border-radius:14px;padding:32px 20px;text-align:center;display:grid;gap:14px;justify-items:center}
 .empty p{margin:0;max-width:42ch}
+.more{display:grid;justify-items:center;gap:10px;margin-top:20px}
+.more p{margin:0}
 footer{max-width:1040px;margin:36px auto 0;padding:0 20px;color:var(--mute);font-size:14px}
 
 /* Barra inferior */
@@ -139,7 +141,7 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
 .cvh{display:flex;gap:18px;align-items:center;margin-bottom:6px}
 .cvh img{flex:none;width:92px;height:92px;border-radius:50%;object-fit:cover}
 .cvh>div{min-width:0}
-@media print{.bar,.tabs,.hero,footer,.toast,.head,.filters,.list,#pform,.pact,#apps,.pside h3,dialog{display:none!important}body{background:#fff;color:#000;padding:0}.pgrid{display:block}.pside{position:static}.cv{border:0;padding:0;background:#fff;color:#000}.cv h4{border-color:#999}.cvt,.cvc{color:#000}}
+@media print{.bar,.tabs,.hero,footer,.toast,.head,.filters,.list,.more,#pform,.pact,#apps,.pside h3,dialog{display:none!important}body{background:#fff;color:#000;padding:0}.pgrid{display:block}.pside{position:static}.cv{border:0;padding:0;background:#fff;color:#000}.cv h4{border-color:#999}.cvt,.cvc{color:#000}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}.btn:active{transform:none}}
 </style>
 </head>
@@ -182,6 +184,10 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
   </div>
   <div class="head" id="head"><h2 id="title">Ofertas recentes</h2><span id="count"></span></div>
   <div class="list" id="list"></div>
+  <div class="more" id="more" hidden>
+    <p class="note" id="more-info"></p>
+    <button type="button" class="btn" id="loadmore">Carregar mais</button>
+  </div>
   <section id="profile" hidden>
     <div class="head"><h2>O meu perfil e CV</h2><span>Guardado automaticamente neste dispositivo</span></div>
     <div class="pgrid">
@@ -300,9 +306,11 @@ const fmtSal=j=>{
   if(hasMax)return `Até ${fmtNum(j.salarioMax)} €/mês`;
   return "Salário a combinar";
 };
+const PAGE_SIZE=20;
 const SAL_STEPS=[900,1000,1200,1500,1800,2000];
 const SORT_TITLES={recent:"Ofertas recentes",salary:"Ofertas por salário",relevance:"Ofertas por relevância"};
-let st={q:"",city:CITIES[0],area:"",type:"",cid:"",salMin:0,sort:"recent",tab:"o"},cur=null,saved=new Set();
+let st={q:"",city:CITIES[0],area:"",type:"",cid:"",salMin:0,sort:"recent",tab:"o"},cur=null,saved=new Set(),shown=PAGE_SIZE;
+const resetPage=()=>{shown=PAGE_SIZE};
 try{saved=new Set(JSON.parse(localStorage.getItem("mare-saved")||"[]"))}catch(e){}
 const persist=()=>{try{localStorage.setItem("mare-saved",JSON.stringify([...saved]))}catch(e){}};
 const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -387,11 +395,15 @@ function render(){
     return (!st.q||norm(st.q).split(/\s+/).every(w=>hay.includes(w)))
       &&(st.city===CITIES[0]||REG[j.m]===st.city)&&(!st.cid||j.m===st.cid)&&(!st.area||j.a===st.area)&&(!st.type||j.k===st.type)&&(!st.salMin||j.salarioMin>=st.salMin);
   }));
+  const visible=r.slice(0,shown);
   $("title").textContent=g?"Ofertas guardadas":(SORT_TITLES[st.sort]||"Ofertas recentes");
-  $("count").textContent=g?"":`${r.length} ${r.length===1?"oferta":"ofertas"}${st.cid?" em "+st.cid:st.city===CITIES[0]?" em Portugal":" na região "+st.city}`;
-  $("list").innerHTML=r.length?r.map(card).join(""):(g
+  $("count").textContent=g?(r.length?`${r.length} ${r.length===1?"oferta guardada":"ofertas guardadas"}`:""):`${r.length} ${r.length===1?"oferta":"ofertas"}${st.cid?" em "+st.cid:st.city===CITIES[0]?" em Portugal":" na região "+st.city}`;
+  $("list").innerHTML=visible.length?visible.map(card).join(""):(g
     ?`<div class="empty"><p>Ainda não guardou nenhuma oferta. Toque em ♡ numa oferta para a guardar aqui.</p><button class="btn" data-go="o">Ver ofertas</button></div>`
     :`<div class="empty"><p>Não encontrámos ofertas com estes filtros. Experimente outra região ou remova filtros.</p><button class="btn" data-clear>Limpar filtros</button></div>`);
+  const hasMore=!p&&r.length>visible.length;
+  $("more").hidden=!hasMore;
+  if(hasMore)$("more-info").textContent=`A mostrar ${visible.length} de ${r.length} ofertas`;
 }
 
 function toggle(id){
@@ -411,19 +423,20 @@ $("list").addEventListener("click",e=>{
   const s=e.target.closest("[data-save]"),o=e.target.closest("[data-id]"),c=e.target.closest("[data-clear]"),go=e.target.closest("[data-go]");
   if(s)toggle(+s.dataset.save);
   else if(o)openJob(+o.dataset.id);
-  else if(c){st={...st,q:"",city:CITIES[0],cid:"",area:"",type:"",salMin:0};fillCities();fillSalMin();$("q").value="";$("area").value="";$("type").value="";render()}
-  else if(go){st.tab="o";render()}
+  else if(c){st={...st,q:"",city:CITIES[0],cid:"",area:"",type:"",salMin:0};resetPage();fillCities();fillSalMin();$("q").value="";$("area").value="";$("type").value="";render()}
+  else if(go){st.tab="o";resetPage();render()}
 });
-$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){st.city=b.dataset.city;st.cid="";fillCities();render()}});
-$("area").onchange=e=>{st.area=e.target.value;render()};
-$("cid").onchange=e=>{st.cid=e.target.value;render()};
-$("type").onchange=e=>{st.type=e.target.value;render()};
-$("salmin").onchange=e=>{st.salMin=Number(e.target.value)||0;render()};
-$("sort").onchange=e=>{st.sort=e.target.value;render()};
-$("q").addEventListener("input",e=>{st.q=e.target.value.trim();render()});
-$("form").addEventListener("submit",e=>{e.preventDefault();st.q=$("q").value.trim();render();$("filters").scrollIntoView({behavior:"smooth"})});
-$("t-o").onclick=()=>{st.tab="o";render();scrollTo({top:0,behavior:"smooth"})};
-$("t-g").onclick=()=>{st.tab="g";render();scrollTo({top:0,behavior:"smooth"})};
+$("loadmore").onclick=()=>{shown+=PAGE_SIZE;render()};
+$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){st.city=b.dataset.city;st.cid="";resetPage();fillCities();render()}});
+$("area").onchange=e=>{st.area=e.target.value;resetPage();render()};
+$("cid").onchange=e=>{st.cid=e.target.value;resetPage();render()};
+$("type").onchange=e=>{st.type=e.target.value;resetPage();render()};
+$("salmin").onchange=e=>{st.salMin=Number(e.target.value)||0;resetPage();render()};
+$("sort").onchange=e=>{st.sort=e.target.value;resetPage();render()};
+$("q").addEventListener("input",e=>{st.q=e.target.value.trim();resetPage();render()});
+$("form").addEventListener("submit",e=>{e.preventDefault();st.q=$("q").value.trim();resetPage();render();$("filters").scrollIntoView({behavior:"smooth"})});
+$("t-o").onclick=()=>{st.tab="o";resetPage();render();scrollTo({top:0,behavior:"smooth"})};
+$("t-g").onclick=()=>{st.tab="g";resetPage();render();scrollTo({top:0,behavior:"smooth"})};
 $("dclose").onclick=()=>$("dlg").close();
 $("dsave").onclick=()=>toggle(cur.id);
 $("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))$("dlg").close()});
