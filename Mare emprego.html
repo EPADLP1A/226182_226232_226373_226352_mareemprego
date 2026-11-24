@@ -60,8 +60,10 @@ main{max-width:1040px;margin:0 auto;padding:0 20px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;cursor:pointer;border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:8px 16px;font-weight:500}
 .chip[aria-pressed="true"]{background:var(--pick);border-color:var(--pick);color:#fff}
-.sel{display:flex;gap:10px;flex-wrap:wrap}
+.sel{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .sel select{flex:1;min-width:160px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surf)}
+.near{flex:none;padding:10px 16px;font-size:15px}
+.near[aria-pressed="true"]{background:rgba(242,92,42,.8);border-color:rgba(255,255,255,.4)}
 .head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
 .head h2{margin:0;font-size:22px;letter-spacing:-.02em}
 .head span{color:var(--mute)}
@@ -81,6 +83,8 @@ main{max-width:1040px;margin:0 auto;padding:0 20px}
 .save{position:absolute;top:14px;right:14px;z-index:2}
 .empty{grid-column:1/-1;background:var(--surf);border:1px dashed var(--line);border-radius:14px;padding:32px 20px;text-align:center;display:grid;gap:14px;justify-items:center}
 .empty p{margin:0;max-width:42ch}
+.more{display:grid;justify-items:center;gap:10px;margin-top:20px}
+.more p{margin:0}
 footer{max-width:1040px;margin:36px auto 0;padding:0 20px;color:var(--mute);font-size:14px}
 
 /* Barra inferior */
@@ -122,13 +126,16 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
 .pact{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
 .pside ul{margin:6px 0 0;padding-left:20px;color:var(--mute)}
 .tag.ok{background:#CDEBDD;color:#0B4A2E}
+.tag.dist{background:rgba(23,96,138,.14);color:var(--pick);font-weight:600}
 /* Tema escuro: preto e azul */
 :root[data-theme="dark"] .glass-t{background-color:rgba(4,12,32,.62)}
-:root[data-theme="dark"] .btn.pri{background-color:rgba(47,107,255,.82)}
+:root[data-theme="dark"] .btn.pri,:root[data-theme="dark"] .near[aria-pressed="true"]{background-color:rgba(47,107,255,.82)}
+:root[data-theme="dark"] .tag.dist{background:rgba(47,107,255,.2)}
 :root[data-theme="dark"] .hero{background:radial-gradient(900px 400px at 85% -10%,#1F4FD8 0,transparent 60%),linear-gradient(165deg,var(--sado),var(--sado2))}
 @media (prefers-color-scheme:dark){
 :root:not([data-theme="light"]) .glass-t{background-color:rgba(4,12,32,.62)}
-:root:not([data-theme="light"]) .btn.pri{background-color:rgba(47,107,255,.82)}
+:root:not([data-theme="light"]) .btn.pri,:root:not([data-theme="light"]) .near[aria-pressed="true"]{background-color:rgba(47,107,255,.82)}
+:root:not([data-theme="light"]) .tag.dist{background:rgba(47,107,255,.2)}
 :root:not([data-theme="light"]) .hero{background:radial-gradient(900px 400px at 85% -10%,#1F4FD8 0,transparent 60%),linear-gradient(165deg,var(--sado),var(--sado2))}
 }
 .note{color:var(--mute);font-size:14px}
@@ -139,7 +146,7 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
 .cvh{display:flex;gap:18px;align-items:center;margin-bottom:6px}
 .cvh img{flex:none;width:92px;height:92px;border-radius:50%;object-fit:cover}
 .cvh>div{min-width:0}
-@media print{.bar,.tabs,.hero,footer,.toast,.head,.filters,.list,#pform,.pact,#apps,.pside h3,dialog{display:none!important}body{background:#fff;color:#000;padding:0}.pgrid{display:block}.pside{position:static}.cv{border:0;padding:0;background:#fff;color:#000}.cv h4{border-color:#999}.cvt,.cvc{color:#000}}
+@media print{.bar,.tabs,.hero,footer,.toast,.head,.filters,.list,.more,#pform,.pact,#apps,.pside h3,dialog{display:none!important}body{background:#fff;color:#000;padding:0}.pgrid{display:block}.pside{position:static}.cv{border:0;padding:0;background:#fff;color:#000}.cv h4{border-color:#999}.cvt,.cvc{color:#000}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}.btn:active{transform:none}}
 </style>
 </head>
@@ -172,10 +179,22 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
       <select id="cid" aria-label="Cidade"></select>
       <select id="area" aria-label="Área"></select>
       <select id="type" aria-label="Tipo de contrato"></select>
+      <select id="salmin" aria-label="Salário mínimo"></select>
+      <select id="sort" aria-label="Ordenar ofertas">
+        <option value="recent">Mais recentes</option>
+        <option value="salary">Salário mais alto</option>
+        <option value="relevance">Relevância</option>
+        <option value="distance" hidden>Mais próximas</option>
+      </select>
+      <button type="button" class="btn near" id="near" aria-pressed="false">Perto de mim</button>
     </div>
   </div>
   <div class="head" id="head"><h2 id="title">Ofertas recentes</h2><span id="count"></span></div>
   <div class="list" id="list"></div>
+  <div class="more" id="more" hidden>
+    <p class="note" id="more-info"></p>
+    <button type="button" class="btn" id="loadmore">Carregar mais</button>
+  </div>
   <section id="profile" hidden>
     <div class="head"><h2>O meu perfil e CV</h2><span>Guardado automaticamente neste dispositivo</span></div>
     <div class="pgrid">
@@ -239,61 +258,172 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
 
 <script>
 const J=[
-{id:1,t:"Cozinheiro/a",c:"Hotel Praia Azul",m:"Sesimbra",a:"Hotelaria e Turismo",k:"Sem termo",r:"Presencial",s:"1 100–1 350 €/mês",d:1,p:"Integre a equipa de cozinha de um hotel com vista para o mar, com horário rotativo e refeições incluídas.",q:["Experiência em cozinha tradicional portuguesa","Disponibilidade para fins de semana","Carta de HACCP (valorizada)"]},
-{id:2,t:"Operador/a de armazém",c:"Logística Sado Sul",m:"Palmela",a:"Logística",k:"Termo certo",r:"Presencial",s:"950–1 050 €/mês",d:2,p:"Receção, arrumação e expedição de mercadorias num centro logístico perto da A12.",q:["Carta de empilhador (valorizada)","Capacidade de trabalho em equipa","Turnos de manhã e tarde"]},
-{id:3,t:"Técnico/a de manutenção naval",c:"Estaleiros do Estuário",m:"Setúbal",a:"Mar e Indústria",k:"Sem termo",r:"Presencial",s:"1 400–1 800 €/mês",d:3,p:"Manutenção e reparação de embarcações de pesca e recreio no estaleiro do Sado.",q:["Formação em mecânica ou eletromecânica","Experiência com motores marítimos","Gosto por trabalho prático"]},
-{id:4,t:"Enfermeiro/a",c:"Clínica Sado Saúde",m:"Setúbal",a:"Saúde",k:"Sem termo",r:"Presencial",s:"1 600–1 900 €/mês",d:1,p:"Cuidados de enfermagem em consulta externa e pequenos procedimentos.",q:["Cédula profissional ativa","Experiência em cuidados de saúde primários","Boa capacidade de comunicação"]},
-{id:5,t:"Programador/a web",c:"Atlântico Digital",m:"Almada",a:"Tecnologia",k:"Sem termo",r:"Híbrido",s:"1 900–2 600 €/mês",d:4,p:"Desenvolvimento de aplicações web para clientes da região, com 3 dias de teletrabalho.",q:["JavaScript e uma framework moderna","Noções de bases de dados","Inglês técnico"]},
-{id:6,t:"Assistente de loja",c:"Mercado Central Moda",m:"Seixal",a:"Comércio",k:"Termo certo",r:"Presencial",s:"870–950 €/mês",d:5,p:"Atendimento ao cliente, reposição e caixa numa loja de moda no centro comercial.",q:["Simpatia e boa apresentação","Disponibilidade para horário de loja","Experiência em vendas (valorizada)"]},
-{id:7,t:"Auxiliar de ação educativa",c:"Colégio Horizonte",m:"Barreiro",a:"Educação",k:"Termo certo",r:"Presencial",s:"900–1 000 €/mês",d:2,p:"Apoio às salas e aos recreios de um colégio com pré-escolar e 1.º ciclo.",q:["12.º ano completo","Paciência e sentido de responsabilidade","Registo criminal limpo"]},
-{id:8,t:"Guia turístico/a na Arrábida",c:"Rotas da Arrábida",m:"Setúbal",a:"Hotelaria e Turismo",k:"Part-time",r:"Presencial",s:"700–950 €/mês",d:6,p:"Conduza visitas a pé e de barco pela Serra da Arrábida e pelo estuário do Sado.",q:["Português e inglês fluentes","Conhecimento da região","Disponibilidade ao fim de semana"]},
-{id:9,t:"Eletricista",c:"Construções Ribeira",m:"Montijo",a:"Construção",k:"Sem termo",r:"Presencial",s:"1 200–1 500 €/mês",d:3,p:"Instalações elétricas em obras residenciais e de reabilitação na margem sul.",q:["Certificação profissional DGEG","Carta de condução B","Experiência mínima de 2 anos"]},
-{id:10,t:"Técnico/a de qualidade alimentar",c:"Conservas do Sado",m:"Setúbal",a:"Mar e Indústria",k:"Sem termo",r:"Presencial",s:"1 300–1 600 €/mês",d:7,p:"Controlo de qualidade e segurança alimentar numa unidade de conservas de peixe.",q:["Licenciatura em Engenharia Alimentar ou afim","Conhecimento de HACCP e ISO 22000","Rigor e atenção ao detalhe"]},
-{id:11,t:"Administrativo/a",c:"Transportes Alcochete",m:"Alcochete",a:"Administrativo",k:"Termo certo",r:"Híbrido",s:"1 000–1 200 €/mês",d:2,p:"Faturação, receção de documentos e contacto com clientes numa empresa de transportes.",q:["Domínio de Excel","Experiência em faturação","Boa organização"]},
-{id:12,t:"Motorista de pesados",c:"Moita Express",m:"Moita",a:"Logística",k:"Sem termo",r:"Presencial",s:"1 300–1 700 €/mês",d:1,p:"Transporte nacional de mercadorias, com regresso ao fim do dia na maioria das rotas.",q:["Carta C+E e CAM válidos","Cartão de tacógrafo","Experiência comprovada"]}
+{id:1,t:"Cozinheiro/a",c:"Hotel Praia Azul",m:"Sesimbra",a:"Hotelaria e Turismo",k:"Sem termo",r:"Presencial",salarioMin:1100,salarioMax:1350,d:1,p:"Integre a equipa de cozinha de um hotel com vista para o mar, com horário rotativo e refeições incluídas.",q:["Experiência em cozinha tradicional portuguesa","Disponibilidade para fins de semana","Carta de HACCP (valorizada)"]},
+{id:2,t:"Operador/a de armazém",c:"Logística Sado Sul",m:"Palmela",a:"Logística",k:"Termo certo",r:"Presencial",salarioMin:950,salarioMax:1050,d:2,p:"Receção, arrumação e expedição de mercadorias num centro logístico perto da A12.",q:["Carta de empilhador (valorizada)","Capacidade de trabalho em equipa","Turnos de manhã e tarde"]},
+{id:3,t:"Técnico/a de manutenção naval",c:"Estaleiros do Estuário",m:"Setúbal",a:"Mar e Indústria",k:"Sem termo",r:"Presencial",salarioMin:1400,salarioMax:1800,d:3,p:"Manutenção e reparação de embarcações de pesca e recreio no estaleiro do Sado.",q:["Formação em mecânica ou eletromecânica","Experiência com motores marítimos","Gosto por trabalho prático"]},
+{id:4,t:"Enfermeiro/a",c:"Clínica Sado Saúde",m:"Setúbal",a:"Saúde",k:"Sem termo",r:"Presencial",salarioMin:1600,salarioMax:1900,d:1,p:"Cuidados de enfermagem em consulta externa e pequenos procedimentos.",q:["Cédula profissional ativa","Experiência em cuidados de saúde primários","Boa capacidade de comunicação"]},
+{id:5,t:"Programador/a web",c:"Atlântico Digital",m:"Almada",a:"Tecnologia",k:"Sem termo",r:"Híbrido",salarioMin:1900,salarioMax:2600,d:4,p:"Desenvolvimento de aplicações web para clientes da região, com 3 dias de teletrabalho.",q:["JavaScript e uma framework moderna","Noções de bases de dados","Inglês técnico"]},
+{id:6,t:"Assistente de loja",c:"Mercado Central Moda",m:"Seixal",a:"Comércio",k:"Termo certo",r:"Presencial",salarioMin:870,salarioMax:950,d:5,p:"Atendimento ao cliente, reposição e caixa numa loja de moda no centro comercial.",q:["Simpatia e boa apresentação","Disponibilidade para horário de loja","Experiência em vendas (valorizada)"]},
+{id:7,t:"Auxiliar de ação educativa",c:"Colégio Horizonte",m:"Barreiro",a:"Educação",k:"Termo certo",r:"Presencial",salarioMin:900,salarioMax:1000,d:2,p:"Apoio às salas e aos recreios de um colégio com pré-escolar e 1.º ciclo.",q:["12.º ano completo","Paciência e sentido de responsabilidade","Registo criminal limpo"]},
+{id:8,t:"Guia turístico/a na Arrábida",c:"Rotas da Arrábida",m:"Setúbal",a:"Hotelaria e Turismo",k:"Part-time",r:"Presencial",salarioMin:700,salarioMax:950,d:6,p:"Conduza visitas a pé e de barco pela Serra da Arrábida e pelo estuário do Sado.",q:["Português e inglês fluentes","Conhecimento da região","Disponibilidade ao fim de semana"]},
+{id:9,t:"Eletricista",c:"Construções Ribeira",m:"Montijo",a:"Construção",k:"Sem termo",r:"Presencial",salarioMin:1200,salarioMax:1500,d:3,p:"Instalações elétricas em obras residenciais e de reabilitação na margem sul.",q:["Certificação profissional DGEG","Carta de condução B","Experiência mínima de 2 anos"]},
+{id:10,t:"Técnico/a de qualidade alimentar",c:"Conservas do Sado",m:"Setúbal",a:"Mar e Indústria",k:"Sem termo",r:"Presencial",salarioMin:1300,salarioMax:1600,d:7,p:"Controlo de qualidade e segurança alimentar numa unidade de conservas de peixe.",q:["Licenciatura em Engenharia Alimentar ou afim","Conhecimento de HACCP e ISO 22000","Rigor e atenção ao detalhe"]},
+{id:11,t:"Administrativo/a",c:"Transportes Alcochete",m:"Alcochete",a:"Administrativo",k:"Termo certo",r:"Híbrido",salarioMin:1000,salarioMax:1200,d:2,p:"Faturação, receção de documentos e contacto com clientes numa empresa de transportes.",q:["Domínio de Excel","Experiência em faturação","Boa organização"]},
+{id:12,t:"Motorista de pesados",c:"Moita Express",m:"Moita",a:"Logística",k:"Sem termo",r:"Presencial",salarioMin:1300,salarioMax:1700,d:1,p:"Transporte nacional de mercadorias, com regresso ao fim do dia na maioria das rotas.",q:["Carta C+E e CAM válidos","Cartão de tacógrafo","Experiência comprovada"]}
 ];
 const CITIES=["Todo o país","Norte","Centro","Lisboa e Vale do Tejo","Alentejo","Algarve","Madeira","Açores"];
 const LV="Lisboa e Vale do Tejo",NO="Norte",CE="Centro";
 const REG={"Setúbal":LV,"Palmela":LV,"Sesimbra":LV,"Almada":LV,"Seixal":LV,"Barreiro":LV,"Moita":LV,"Montijo":LV,"Alcochete":LV,"Lisboa":LV,"Santarém":LV,"Porto":NO,"Braga":NO,"Guimarães":NO,"Peso da Régua":NO,"Coimbra":CE,"Viseu":CE,"Aveiro":CE,"Marinha Grande":CE,"Castelo Branco":CE,"Évora":"Alentejo","Beja":"Alentejo","Faro":"Algarve","Funchal":"Madeira","Ponta Delgada":"Açores"};
 [
-[13,"Engenheiro/a de software","Douro Labs","Porto","Tecnologia","Sem termo","Híbrido","2 200–3 200 €/mês",1,"Desenvolva serviços para clientes europeus numa equipa pequena e experiente.","Licenciatura em Informática|Experiência com APIs e cloud|Inglês fluente"],
-[14,"Enfermeiro/a","Clínica Mondego Saúde","Coimbra","Saúde","Sem termo","Presencial","1 600–1 900 €/mês",2,"Cuidados de enfermagem em internamento e consulta, com turnos rotativos.","Cédula profissional ativa|Experiência hospitalar (valorizada)|Capacidade de trabalho em equipa"],
-[15,"Rececionista de hotel","Hotel Ria Formosa","Faro","Hotelaria e Turismo","Termo certo","Presencial","950–1 100 €/mês",1,"Check-in, reservas e apoio aos hóspedes num hotel perto do aeroporto.","Inglês e mais uma língua|Experiência com software de reservas|Disponibilidade para turnos"],
-[16,"Apoio ao cliente em inglês","Contacto Global","Lisboa","Serviços","Sem termo","Híbrido","1 000–1 250 €/mês",3,"Responda a clientes internacionais por chat e email, com formação paga.","Inglês fluente|Boa escrita|Gosto por resolver problemas"],
-[17,"Técnico/a de energia solar","Sol do Alentejo","Évora","Energia","Sem termo","Presencial","1 300–1 700 €/mês",4,"Instalação e manutenção de painéis solares em casas e empresas do Alentejo.","Formação em eletricidade|Carta de condução B|Trabalho em altura"],
-[18,"Designer gráfico/a","Estúdio Granito","Braga","Design e Comunicação","Sem termo","Híbrido","1 300–1 700 €/mês",2,"Identidade visual, redes sociais e impressão para marcas do Minho.","Domínio de Figma e Adobe|Portefólio atualizado|Sentido estético"],
-[19,"Pasteleiro/a","Pastelaria Serra Dourada","Viseu","Hotelaria e Turismo","Sem termo","Presencial","1 000–1 250 €/mês",5,"Produção diária de pastelaria tradicional e bolos por encomenda.","Experiência em pastelaria|Horário madrugador|Rigor na higiene alimentar"],
-[20,"Soldador/a","Metalúrgica do Vouga","Aveiro","Indústria","Sem termo","Presencial","1 150–1 500 €/mês",3,"Soldadura de estruturas metálicas numa fábrica com equipa estável.","Certificação em soldadura|Leitura de desenho técnico|Experiência mínima de 2 anos"],
-[21,"Gestor/a de loja","Atlântico Retail","Funchal","Comércio","Sem termo","Presencial","1 400–1 800 €/mês",2,"Liderança de equipa, stocks e objetivos de vendas numa loja no centro do Funchal.","Experiência em gestão de equipas|Capacidade de organização|Orientação para resultados"],
-[22,"Técnico/a agrícola","Herdade das Oliveiras","Beja","Agricultura","Sem termo","Presencial","1 100–1 400 €/mês",6,"Acompanhamento de olival e vinha, rega e planeamento de colheitas.","Formação em agronomia ou afim|Carta de condução B|Gosto por trabalho ao ar livre"],
-[23,"Professor/a de inglês","Academia Mar Azul","Ponta Delgada","Educação","Part-time","Presencial","800–1 100 €/mês",4,"Aulas de inglês para crianças e adultos em horário pós-laboral.","Licenciatura em línguas|Experiência de ensino|Paciência e boa comunicação"],
-[24,"Contabilista","Gabinete Minho Contas","Guimarães","Administrativo","Sem termo","Híbrido","1 500–2 000 €/mês",3,"Contabilidade e fiscalidade para PME, com dois dias de teletrabalho.","Experiência em contabilidade organizada|Conhecimento de software de contabilidade|Inscrição na OCC (valorizada)"],
-[25,"Auxiliar de saúde","Lar Vale do Tejo","Santarém","Saúde","Termo certo","Presencial","900–1 000 €/mês",2,"Apoio diário a idosos em lar residencial, com formação inicial.","Disponibilidade para turnos|Empatia e sentido de responsabilidade|Experiência (valorizada)"],
-[26,"Mecânico/a automóvel","Auto Beira Serra","Castelo Branco","Indústria","Sem termo","Presencial","1 100–1 450 €/mês",5,"Diagnóstico e reparação de viaturas ligeiras numa oficina com clientela fixa.","Experiência em mecânica|Conhecimentos de diagnóstico eletrónico|Carta de condução B"],
-[27,"Operador/a de máquinas CNC","Moldes Marinha","Marinha Grande","Indústria","Sem termo","Presencial","1 100–1 400 €/mês",1,"Operação e programação de centros de maquinação na região dos moldes.","Experiência em CNC|Leitura de desenho técnico|Atenção ao detalhe"],
-[28,"Animador/a turístico/a","Douro Vivo","Peso da Régua","Hotelaria e Turismo","Termo certo","Presencial","900–1 100 €/mês",4,"Visitas a quintas, provas de vinho e passeios de barco no Douro.","Português e inglês|Simpatia e comunicação|Disponibilidade ao fim de semana"],
-[29,"Analista de dados","Foz Analytics","Porto","Tecnologia","Sem termo","Híbrido","1 800–2 400 €/mês",2,"Construa relatórios e dashboards para equipas de vendas e operações.","SQL e Excel avançado|Experiência com Power BI ou similar|Pensamento analítico"],
-[30,"Designer de UX","Tejo Studio","Lisboa","Tecnologia","Sem termo","Híbrido","1 900–2 500 €/mês",1,"Pesquisa, protótipos e testes para produtos digitais de clientes nacionais.","Portefólio de produto|Domínio de Figma|Experiência com testes de utilizador"]
-].forEach(r=>J.push({id:r[0],t:r[1],c:r[2],m:r[3],a:r[4],k:r[5],r:r[6],s:r[7],d:r[8],p:r[9],q:r[10].split("|")}));
+[13,"Engenheiro/a de software","Douro Labs","Porto","Tecnologia","Sem termo","Híbrido",2200,3200,1,"Desenvolva serviços para clientes europeus numa equipa pequena e experiente.","Licenciatura em Informática|Experiência com APIs e cloud|Inglês fluente"],
+[14,"Enfermeiro/a","Clínica Mondego Saúde","Coimbra","Saúde","Sem termo","Presencial",1600,1900,2,"Cuidados de enfermagem em internamento e consulta, com turnos rotativos.","Cédula profissional ativa|Experiência hospitalar (valorizada)|Capacidade de trabalho em equipa"],
+[15,"Rececionista de hotel","Hotel Ria Formosa","Faro","Hotelaria e Turismo","Termo certo","Presencial",950,1100,1,"Check-in, reservas e apoio aos hóspedes num hotel perto do aeroporto.","Inglês e mais uma língua|Experiência com software de reservas|Disponibilidade para turnos"],
+[16,"Apoio ao cliente em inglês","Contacto Global","Lisboa","Serviços","Sem termo","Híbrido",1000,1250,3,"Responda a clientes internacionais por chat e email, com formação paga.","Inglês fluente|Boa escrita|Gosto por resolver problemas"],
+[17,"Técnico/a de energia solar","Sol do Alentejo","Évora","Energia","Sem termo","Presencial",1300,1700,4,"Instalação e manutenção de painéis solares em casas e empresas do Alentejo.","Formação em eletricidade|Carta de condução B|Trabalho em altura"],
+[18,"Designer gráfico/a","Estúdio Granito","Braga","Design e Comunicação","Sem termo","Híbrido",1300,1700,2,"Identidade visual, redes sociais e impressão para marcas do Minho.","Domínio de Figma e Adobe|Portefólio atualizado|Sentido estético"],
+[19,"Pasteleiro/a","Pastelaria Serra Dourada","Viseu","Hotelaria e Turismo","Sem termo","Presencial",1000,1250,5,"Produção diária de pastelaria tradicional e bolos por encomenda.","Experiência em pastelaria|Horário madrugador|Rigor na higiene alimentar"],
+[20,"Soldador/a","Metalúrgica do Vouga","Aveiro","Indústria","Sem termo","Presencial",1150,1500,3,"Soldadura de estruturas metálicas numa fábrica com equipa estável.","Certificação em soldadura|Leitura de desenho técnico|Experiência mínima de 2 anos"],
+[21,"Gestor/a de loja","Atlântico Retail","Funchal","Comércio","Sem termo","Presencial",1400,1800,2,"Liderança de equipa, stocks e objetivos de vendas numa loja no centro do Funchal.","Experiência em gestão de equipas|Capacidade de organização|Orientação para resultados"],
+[22,"Técnico/a agrícola","Herdade das Oliveiras","Beja","Agricultura","Sem termo","Presencial",1100,1400,6,"Acompanhamento de olival e vinha, rega e planeamento de colheitas.","Formação em agronomia ou afim|Carta de condução B|Gosto por trabalho ao ar livre"],
+[23,"Professor/a de inglês","Academia Mar Azul","Ponta Delgada","Educação","Part-time","Presencial",800,1100,4,"Aulas de inglês para crianças e adultos em horário pós-laboral.","Licenciatura em línguas|Experiência de ensino|Paciência e boa comunicação"],
+[24,"Contabilista","Gabinete Minho Contas","Guimarães","Administrativo","Sem termo","Híbrido",1500,2000,3,"Contabilidade e fiscalidade para PME, com dois dias de teletrabalho.","Experiência em contabilidade organizada|Conhecimento de software de contabilidade|Inscrição na OCC (valorizada)"],
+[25,"Auxiliar de saúde","Lar Vale do Tejo","Santarém","Saúde","Termo certo","Presencial",900,1000,2,"Apoio diário a idosos em lar residencial, com formação inicial.","Disponibilidade para turnos|Empatia e sentido de responsabilidade|Experiência (valorizada)"],
+[26,"Mecânico/a automóvel","Auto Beira Serra","Castelo Branco","Indústria","Sem termo","Presencial",1100,1450,5,"Diagnóstico e reparação de viaturas ligeiras numa oficina com clientela fixa.","Experiência em mecânica|Conhecimentos de diagnóstico eletrónico|Carta de condução B"],
+[27,"Operador/a de máquinas CNC","Moldes Marinha","Marinha Grande","Indústria","Sem termo","Presencial",1100,1400,1,"Operação e programação de centros de maquinação na região dos moldes.","Experiência em CNC|Leitura de desenho técnico|Atenção ao detalhe"],
+[28,"Animador/a turístico/a","Douro Vivo","Peso da Régua","Hotelaria e Turismo","Termo certo","Presencial",900,1100,4,"Visitas a quintas, provas de vinho e passeios de barco no Douro.","Português e inglês|Simpatia e comunicação|Disponibilidade ao fim de semana"],
+[29,"Analista de dados","Foz Analytics","Porto","Tecnologia","Sem termo","Híbrido",1800,2400,2,"Construa relatórios e dashboards para equipas de vendas e operações.","SQL e Excel avançado|Experiência com Power BI ou similar|Pensamento analítico"],
+[30,"Designer de UX","Tejo Studio","Lisboa","Tecnologia","Sem termo","Híbrido",1900,2500,1,"Pesquisa, protótipos e testes para produtos digitais de clientes nacionais.","Portefólio de produto|Domínio de Figma|Experiência com testes de utilizador"]
+].forEach(r=>J.push({id:r[0],t:r[1],c:r[2],m:r[3],a:r[4],k:r[5],r:r[6],salarioMin:r[7],salarioMax:r[8],d:r[9],p:r[10],q:r[11].split("|")}));
 const CL={"Norte":"Porto,Braga,Guimarães,Vila Nova de Gaia,Matosinhos,Maia,Vila do Conde,Póvoa de Varzim,Famalicão,Viana do Castelo,Vila Real,Bragança,Chaves,Peso da Régua,Barcelos,Amarante,Paredes","Centro":"Coimbra,Aveiro,Viseu,Leiria,Guarda,Castelo Branco,Covilhã,Figueira da Foz,Marinha Grande,Caldas da Rainha,Tomar","Lisboa e Vale do Tejo":"Lisboa,Setúbal,Almada,Seixal,Barreiro,Amadora,Sintra,Cascais,Oeiras,Loures,Odivelas,Vila Franca de Xira,Montijo,Moita,Palmela,Sesimbra,Alcochete,Santarém,Torres Vedras,Abrantes","Alentejo":"Évora,Beja,Portalegre,Sines,Elvas,Santiago do Cacém,Estremoz","Algarve":"Faro,Portimão,Lagos,Albufeira,Loulé,Tavira,Olhão,Silves","Madeira":"Funchal,Câmara de Lobos,Machico","Açores":"Ponta Delgada,Angra do Heroísmo,Horta,Ribeira Grande"};
 Object.entries(CL).forEach(([g,s])=>s.split(",").forEach(c=>REG[c]=g));
 const TP=[
-["Assistente de loja","Loja Central","Comércio","Termo certo","870–950 €/mês","Atendimento, reposição e caixa numa loja de comércio local.","Simpatia e boa apresentação|Disponibilidade para horário de loja|Experiência em vendas (valorizada)"],
-["Administrativo/a","Gabinete Horizonte","Administrativo","Sem termo","1 000–1 250 €/mês","Apoio administrativo, atendimento e organização de documentos.","Domínio de Office|Boa organização|Experiência em escritório (valorizada)"],
-["Auxiliar de cozinha","Restaurante Cais","Hotelaria e Turismo","Termo certo","870–1 000 €/mês","Apoio à cozinha de um restaurante com clientela local e turística.","Disponibilidade para fins de semana|Rapidez e higiene|Experiência (valorizada)"],
-["Operador/a de logística","Armazéns Atlântico","Logística","Termo certo","950–1 100 €/mês","Preparação de encomendas e carga e descarga num armazém regional.","Capacidade física|Trabalho em equipa|Carta de empilhador (valorizada)"],
-["Auxiliar de ação educativa","Escola Nova","Educação","Termo certo","900–1 000 €/mês","Apoio às salas e aos recreios de uma escola com pré-escolar e 1.º ciclo.","12.º ano completo|Responsabilidade e paciência|Registo criminal limpo"]
+["Assistente de loja","Loja Central","Comércio","Termo certo",870,950,"Atendimento, reposição e caixa numa loja de comércio local.","Simpatia e boa apresentação|Disponibilidade para horário de loja|Experiência em vendas (valorizada)"],
+["Administrativo/a","Gabinete Horizonte","Administrativo","Sem termo",1000,1250,"Apoio administrativo, atendimento e organização de documentos.","Domínio de Office|Boa organização|Experiência em escritório (valorizada)"],
+["Auxiliar de cozinha","Restaurante Cais","Hotelaria e Turismo","Termo certo",870,1000,"Apoio à cozinha de um restaurante com clientela local e turística.","Disponibilidade para fins de semana|Rapidez e higiene|Experiência (valorizada)"],
+["Operador/a de logística","Armazéns Atlântico","Logística","Termo certo",950,1100,"Preparação de encomendas e carga e descarga num armazém regional.","Capacidade física|Trabalho em equipa|Carta de empilhador (valorizada)"],
+["Auxiliar de ação educativa","Escola Nova","Educação","Termo certo",900,1000,"Apoio às salas e aos recreios de uma escola com pré-escolar e 1.º ciclo.","12.º ano completo|Responsabilidade e paciência|Registo criminal limpo"]
 ];
-Object.keys(REG).forEach((c,i)=>{if(J.some(j=>j.m===c))return;const t=TP[i%TP.length];J.push({id:100+i,t:t[0],c:t[1],m:c,a:t[2],k:t[3],r:"Presencial",s:t[4],d:1+i%7,p:t[5],q:t[6].split("|")})});
+Object.keys(REG).forEach((c,i)=>{if(J.some(j=>j.m===c))return;const t=TP[i%TP.length];J.push({id:100+i,t:t[0],c:t[1],m:c,a:t[2],k:t[3],r:"Presencial",salarioMin:t[4],salarioMax:t[5],d:1+i%7,p:t[6],q:t[7].split("|")})});
 const $=id=>document.getElementById(id);
-let st={q:"",city:CITIES[0],area:"",type:"",cid:"",tab:"o"},cur=null,saved=new Set();
+const fmtNum=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g," ");
+const fmtSal=j=>{
+  const hasMin=typeof j.salarioMin==="number",hasMax=typeof j.salarioMax==="number";
+  if(hasMin&&hasMax)return j.salarioMin===j.salarioMax?`${fmtNum(j.salarioMin)} €/mês`:`${fmtNum(j.salarioMin)}–${fmtNum(j.salarioMax)} €/mês`;
+  if(hasMin)return `Desde ${fmtNum(j.salarioMin)} €/mês`;
+  if(hasMax)return `Até ${fmtNum(j.salarioMax)} €/mês`;
+  return "Salário a combinar";
+};
+const COORDS={
+"Porto":[41.1579,-8.6291],"Braga":[41.5454,-8.4265],"Guimarães":[41.4425,-8.2918],"Vila Nova de Gaia":[41.1239,-8.6118],
+"Matosinhos":[41.1821,-8.6891],"Maia":[41.2357,-8.6199],"Vila do Conde":[41.3540,-8.7438],"Póvoa de Varzim":[41.3804,-8.7609],
+"Famalicão":[41.4080,-8.5198],"Viana do Castelo":[41.6932,-8.8329],"Vila Real":[41.3006,-7.7441],"Bragança":[41.8061,-6.7567],
+"Chaves":[41.7402,-7.4688],"Peso da Régua":[41.1631,-7.7888],"Barcelos":[41.5318,-8.6151],"Amarante":[41.2698,-8.0825],
+"Paredes":[41.2052,-8.3304],"Coimbra":[40.2033,-8.4103],"Aveiro":[40.6405,-8.6538],"Viseu":[40.6566,-7.9125],
+"Leiria":[39.7436,-8.8071],"Guarda":[40.5373,-7.2658],"Castelo Branco":[39.8222,-7.4909],"Covilhã":[40.2806,-7.5043],
+"Figueira da Foz":[40.1509,-8.8618],"Marinha Grande":[39.7478,-8.9323],"Caldas da Rainha":[39.4033,-9.1384],"Tomar":[39.6020,-8.4092],
+"Lisboa":[38.7223,-9.1393],"Setúbal":[38.5244,-8.8882],"Almada":[38.6790,-9.1569],"Seixal":[38.6400,-9.1014],
+"Barreiro":[38.6631,-9.0724],"Amadora":[38.7538,-9.2308],"Sintra":[38.8029,-9.3817],"Cascais":[38.6979,-9.4215],
+"Oeiras":[38.6910,-9.3109],"Loures":[38.8309,-9.1684],"Odivelas":[38.7927,-9.1838],"Vila Franca de Xira":[38.9553,-8.9897],
+"Montijo":[38.7067,-8.9739],"Moita":[38.6508,-8.9904],"Palmela":[38.5690,-8.9013],"Sesimbra":[38.4445,-9.1015],
+"Alcochete":[38.7553,-8.9609],"Santarém":[39.2362,-8.6860],"Torres Vedras":[39.0911,-9.2586],"Abrantes":[39.4667,-8.1972],
+"Évora":[38.5714,-7.9135],"Beja":[38.0151,-7.8632],"Portalegre":[39.2967,-7.4285],"Sines":[37.9562,-8.8698],
+"Elvas":[38.8815,-7.1628],"Santiago do Cacém":[38.0160,-8.6952],"Estremoz":[38.8424,-7.5861],"Faro":[37.0194,-7.9322],
+"Portimão":[37.1362,-8.5377],"Lagos":[37.1028,-8.6730],"Albufeira":[37.0891,-8.2479],"Loulé":[37.1378,-8.0195],
+"Tavira":[37.1273,-7.6486],"Olhão":[37.0260,-7.8411],"Silves":[37.1892,-8.4384],"Funchal":[32.6669,-16.9241],
+"Câmara de Lobos":[32.6504,-16.9767],"Machico":[32.7186,-16.7660],"Ponta Delgada":[37.7412,-25.6756],
+"Angra do Heroísmo":[38.6558,-27.2177],"Horta":[38.5326,-28.6292],"Ribeira Grande":[37.8211,-25.5197]
+};
+const PAGE_SIZE=20;
+const SAL_STEPS=[900,1000,1200,1500,1800,2000];
+const SORT_TITLES={recent:"Ofertas recentes",salary:"Ofertas por salário",relevance:"Ofertas por relevância",distance:"Ofertas perto de si"};
+let st={q:"",city:CITIES[0],area:"",type:"",cid:"",salMin:0,sort:"recent",tab:"o"},cur=null,saved=new Set(),shown=PAGE_SIZE;
+let userPos=null,geoBusy=false,prevSort="recent";
+const resetPage=()=>{shown=PAGE_SIZE};
 try{saved=new Set(JSON.parse(localStorage.getItem("mare-saved")||"[]"))}catch(e){}
 const persist=()=>{try{localStorage.setItem("mare-saved",JSON.stringify([...saved]))}catch(e){}};
 const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 
+function distKm(lat1,lon1,lat2,lon2){
+  const R=6371,rad=Math.PI/180,dLat=(lat2-lat1)*rad,dLon=(lon2-lon1)*rad;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+function jobDist(j){
+  if(!userPos)return null;
+  const pt=COORDS[j.m];
+  return pt?distKm(userPos.lat,userPos.lon,pt[0],pt[1]):null;
+}
+const fmtDist=km=>km<1?"< 1 km":km<10?`${km.toFixed(1).replace(".",",")} km`:`${Math.round(km)} km`;
+
+function relevanceScore(j){
+  let score=0;
+  const words=st.q?norm(st.q).split(/\s+/).filter(Boolean):[];
+  const title=norm(j.t),comp=norm(j.c),city=norm(j.m),area=norm(j.a),desc=norm(j.p+" "+j.q.join(" "));
+  if(words.length){
+    const fullQ=words.join(" ");
+    if(title===fullQ)score+=120;
+    else if(title.startsWith(fullQ))score+=60;
+    for(const w of words){
+      if(title.includes(w)){score+=35;if(title.split(/\W+/).some(tw=>tw.startsWith(w)))score+=15}
+      if(area.includes(w))score+=20;
+      if(city.includes(w))score+=18;
+      if(comp.includes(w))score+=12;
+      if(desc.includes(w))score+=6;
+    }
+  }
+  if(typeof P!=="undefined"&&P){
+    if(P.titulo&&P.titulo.trim()){
+      for(const w of norm(P.titulo).split(/\s+/).filter(x=>x.length>2)){
+        if(title.includes(w))score+=25;
+        if(area.includes(w))score+=10;
+      }
+    }
+    if(P.cidade&&P.cidade.trim()&&norm(P.cidade.trim())===city)score+=20;
+    if(P.skills&&P.skills.trim()){
+      for(const sk of P.skills.split(",").map(s=>norm(s.trim())).filter(x=>x.length>2)){
+        if(title.includes(sk)||desc.includes(sk)||area.includes(sk))score+=10;
+      }
+    }
+  }
+  score+=Math.max(0,10-j.d);
+  score+=(j.salarioMax||0)/1000;
+  return score;
+}
+
+function sortJobs(arr){
+  if(st.sort==="distance"&&userPos){
+    const dists=new Map(arr.map(j=>[j.id,jobDist(j)]));
+    return arr.sort((a,b)=>{
+      const da=dists.get(a.id),db=dists.get(b.id);
+      if(da==null&&db==null)return (a.d-b.d)||(a.id-b.id);
+      if(da==null)return 1;
+      if(db==null)return -1;
+      return (da-db)||(a.d-b.d)||(a.id-b.id);
+    });
+  }
+  if(st.sort==="salary")return arr.sort((a,b)=>(b.salarioMax-a.salarioMax)||(b.salarioMin-a.salarioMin)||(a.d-b.d)||(a.id-b.id));
+  if(st.sort==="relevance"){
+    const scores=new Map(arr.map(j=>[j.id,relevanceScore(j)]));
+    return arr.sort((a,b)=>(scores.get(b.id)-scores.get(a.id))||(a.d-b.d)||(a.id-b.id));
+  }
+  return arr.sort((a,b)=>(a.d-b.d)||(a.id-b.id));
+}
+
+const AREAS=[...new Set(J.map(j=>j.a))].sort();
+const TYPES=[...new Set(J.map(j=>j.k))];
+const VALID_SORTS=new Set(["recent","salary","relevance","distance"]);
+let typingHistory=false;
+
 function fillSelect(el,first,vals){el.innerHTML=`<option value="">${first}</option>`+vals.map(v=>`<option>${v}</option>`).join("")}
-fillSelect($("area"),"Todas as áreas",[...new Set(J.map(j=>j.a))].sort());
-fillSelect($("type"),"Todos os contratos",[...new Set(J.map(j=>j.k))]);
+fillSelect($("area"),"Todas as áreas",AREAS);
+fillSelect($("type"),"Todos os contratos",TYPES);
+function fillSalMin(){
+  const opts=[...SAL_STEPS];
+  if(st.salMin>0&&!opts.includes(st.salMin)){opts.push(st.salMin);opts.sort((a,b)=>a-b)}
+  $("salmin").innerHTML=`<option value="">Salário mínimo</option>`+opts.map(v=>`<option value="${v}">Desde ${fmtNum(v)} €/mês</option>`).join("");
+  $("salmin").value=st.salMin?String(st.salMin):"";
+}
+fillSalMin();
 function fillCities(){
   const srt=s=>s.split(",").sort((a,b)=>a.localeCompare(b,"pt"));
   const opt=cs=>cs.map(c=>`<option>${c}</option>`).join("");
@@ -304,7 +434,73 @@ function fillCities(){
 fillCities();
 $("chips").innerHTML=CITIES.map(c=>`<button class="chip" data-city="${c}" aria-pressed="${c===st.city}">${c}</button>`).join("");
 
-const card=j=>`<article class="card"><button class="open" data-id="${j.id}">${j.t}</button><p class="co">${j.c}, ${j.m}</p><div class="tags"><span class="tag">${j.k}</span><span class="tag">${j.r}</span><span class="tag">${j.a}</span>${applied.has(j.id)?`<span class="tag ok">Candidatado</span>`:""}</div><p class="sal">${j.s}<small>Há ${j.d} ${j.d>1?"dias":"dia"}</small></p><button class="btn icon save" data-save="${j.id}" aria-pressed="${saved.has(j.id)}" aria-label="${saved.has(j.id)?"Remover das guardadas":"Guardar oferta"}">${saved.has(j.id)?"♥":"♡"}</button></article>`;
+function buildSearch(){
+  const p=new URLSearchParams();
+  if(st.tab!=="o")p.set("tab",st.tab);
+  if(st.q)p.set("q",st.q);
+  if(st.city!==CITIES[0])p.set("regiao",st.city);
+  if(st.cid)p.set("cidade",st.cid);
+  if(st.area)p.set("area",st.area);
+  if(st.type)p.set("contrato",st.type);
+  if(st.salMin>0)p.set("salario",String(st.salMin));
+  if(st.sort!=="recent"&&!(st.sort==="distance"&&!userPos))p.set("ordem",st.sort);
+  const qs=p.toString();
+  return qs?"?"+qs:"";
+}
+function syncURL(replace=false){
+  const nextSearch=buildSearch();
+  if(nextSearch===location.search)return;
+  const nextUrl=location.pathname+nextSearch+location.hash;
+  try{
+    if(replace)history.replaceState(null,"",nextUrl);
+    else history.pushState(null,"",nextUrl);
+  }catch(e){}
+}
+function readURL(){
+  const p=new URLSearchParams(location.search);
+  const tab=p.get("tab");
+  st.tab=(tab==="g"||tab==="p")?tab:"o";
+  st.q=(p.get("q")||"").trim();
+  const reg=p.get("regiao")||"";
+  st.city=CITIES.includes(reg)?reg:CITIES[0];
+  const cid=p.get("cidade")||"";
+  st.cid=(cid&&REG[cid]&&(st.city===CITIES[0]||REG[cid]===st.city))?cid:"";
+  const area=p.get("area")||"";
+  st.area=AREAS.includes(area)?area:"";
+  const type=p.get("contrato")||"";
+  st.type=TYPES.includes(type)?type:"";
+  const sal=Number(p.get("salario"));
+  st.salMin=(Number.isFinite(sal)&&sal>0)?Math.floor(sal):0;
+  const ord=p.get("ordem")||"recent";
+  st.sort=(VALID_SORTS.has(ord)&&(ord!=="distance"||userPos))?ord:"recent";
+  if(st.sort!=="distance")prevSort=st.sort;
+}
+function syncControls(){
+  $("q").value=st.q;
+  fillCities();
+  $("area").value=st.area;
+  $("type").value=st.type;
+  fillSalMin();
+  syncNearUI();
+}
+function commitChange(replace=false){
+  typingHistory=false;
+  resetPage();
+  syncURL(replace);
+  render();
+}
+
+const card=j=>{
+  const d=jobDist(j);
+  return `<article class="card"><button class="open" data-id="${j.id}">${j.t}</button><p class="co">${j.c}, ${j.m}</p><div class="tags"><span class="tag">${j.k}</span><span class="tag">${j.r}</span><span class="tag">${j.a}</span>${d!=null?`<span class="tag dist">${fmtDist(d)}</span>`:""}${applied.has(j.id)?`<span class="tag ok">Candidatado</span>`:""}</div><p class="sal">${fmtSal(j)}<small>Há ${j.d} ${j.d>1?"dias":"dia"}</small></p><button class="btn icon save" data-save="${j.id}" aria-pressed="${saved.has(j.id)}" aria-label="${saved.has(j.id)?"Remover das guardadas":"Guardar oferta"}">${saved.has(j.id)?"♥":"♡"}</button></article>`;
+};
+
+function syncNearUI(){
+  const distOpt=$("sort").querySelector('option[value="distance"]');
+  if(distOpt)distOpt.hidden=!userPos;
+  $("sort").value=(st.sort==="distance"&&!userPos)?"recent":st.sort;
+  $("near").setAttribute("aria-pressed",st.sort==="distance"&&userPos?"true":"false");
+}
 
 function render(){
   const g=st.tab==="g";
@@ -313,17 +509,22 @@ function render(){
   $("t-g").setAttribute("aria-current",g?"page":"false");
   $("t-g").textContent=saved.size?`Guardadas (${saved.size})`:"Guardadas";
   document.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.city===st.city));
-  let r=J.filter(j=>{
+  syncNearUI();
+  let r=sortJobs(J.filter(j=>{
     if(g)return saved.has(j.id);
     const hay=norm([j.t,j.c,j.a,j.m].join(" "));
     return (!st.q||norm(st.q).split(/\s+/).every(w=>hay.includes(w)))
-      &&(st.city===CITIES[0]||REG[j.m]===st.city)&&(!st.cid||j.m===st.cid)&&(!st.area||j.a===st.area)&&(!st.type||j.k===st.type);
-  }).sort((a,b)=>a.d-b.d);
-  $("title").textContent=g?"Ofertas guardadas":"Ofertas recentes";
-  $("count").textContent=g?"":`${r.length} ${r.length===1?"oferta":"ofertas"}${st.cid?" em "+st.cid:st.city===CITIES[0]?" em Portugal":" na região "+st.city}`;
-  $("list").innerHTML=r.length?r.map(card).join(""):(g
+      &&(st.city===CITIES[0]||REG[j.m]===st.city)&&(!st.cid||j.m===st.cid)&&(!st.area||j.a===st.area)&&(!st.type||j.k===st.type)&&(!st.salMin||j.salarioMin>=st.salMin);
+  }));
+  const visible=r.slice(0,shown);
+  $("title").textContent=g?"Ofertas guardadas":(SORT_TITLES[st.sort]||"Ofertas recentes");
+  $("count").textContent=g?(r.length?`${r.length} ${r.length===1?"oferta guardada":"ofertas guardadas"}`:""):`${r.length} ${r.length===1?"oferta":"ofertas"}${st.cid?" em "+st.cid:st.city===CITIES[0]?" em Portugal":" na região "+st.city}`;
+  $("list").innerHTML=visible.length?visible.map(card).join(""):(g
     ?`<div class="empty"><p>Ainda não guardou nenhuma oferta. Toque em ♡ numa oferta para a guardar aqui.</p><button class="btn" data-go="o">Ver ofertas</button></div>`
     :`<div class="empty"><p>Não encontrámos ofertas com estes filtros. Experimente outra região ou remova filtros.</p><button class="btn" data-clear>Limpar filtros</button></div>`);
+  const hasMore=!p&&r.length>visible.length;
+  $("more").hidden=!hasMore;
+  if(hasMore)$("more-info").textContent=`A mostrar ${visible.length} de ${r.length} ofertas`;
 }
 
 function toggle(id){
@@ -335,28 +536,87 @@ function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout
 
 function openJob(id){
   cur=J.find(j=>j.id===id);
-  $("dbody").innerHTML=`<h2 id="dt">${cur.t}</h2><p class="co">${cur.c}, ${cur.m}</p><div class="tags"><span class="tag">${cur.k}</span><span class="tag">${cur.r}</span><span class="tag">${cur.a}</span></div><p class="sal" style="margin-top:14px">${cur.s}</p><h3>Sobre a oferta</h3><p>${cur.p}</p><h3>Requisitos</h3><ul>${cur.q.map(x=>`<li>${x}</li>`).join("")}</ul><p class="note">${noteText()}</p>`;
+  const d=jobDist(cur);
+  $("dbody").innerHTML=`<h2 id="dt">${cur.t}</h2><p class="co">${cur.c}, ${cur.m}</p><div class="tags"><span class="tag">${cur.k}</span><span class="tag">${cur.r}</span><span class="tag">${cur.a}</span>${d!=null?`<span class="tag dist">${fmtDist(d)}</span>`:""}</div><p class="sal" style="margin-top:14px">${fmtSal(cur)}</p><h3>Sobre a oferta</h3><p>${cur.p}</p><h3>Requisitos</h3><ul>${cur.q.map(x=>`<li>${x}</li>`).join("")}</ul><p class="note">${noteText()}</p>`;
   syncSave();syncApply();$("dlg").showModal();$("dbody").scrollTop=0;
+}
+
+function toggleNear(){
+  if(geoBusy)return;
+  if(st.sort==="distance"&&userPos){
+    st.sort=prevSort!=="distance"?prevSort:"recent";
+    commitChange();return;
+  }
+  if(userPos){
+    if(st.sort!=="distance")prevSort=st.sort;
+    st.sort="distance";commitChange();
+    toast("Ofertas ordenadas por proximidade");return;
+  }
+  if(!navigator.geolocation){
+    toast("Geolocalização não suportada neste navegador");return;
+  }
+  geoBusy=true;
+  $("near").disabled=true;
+  $("near").textContent="A localizar…";
+  navigator.geolocation.getCurrentPosition(pos=>{
+    geoBusy=false;
+    $("near").disabled=false;
+    $("near").textContent="Perto de mim";
+    userPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
+    if(st.sort!=="distance")prevSort=st.sort;
+    st.sort="distance";
+    commitChange();
+    toast("Ofertas ordenadas por proximidade");
+  },err=>{
+    geoBusy=false;
+    $("near").disabled=false;
+    $("near").textContent="Perto de mim";
+    syncNearUI();
+    const msg=err&&err.code===1?"Localização recusada. As ofertas continuam disponíveis normalmente."
+      :err&&err.code===3?"Tempo esgotado ao obter a localização."
+      :"Não foi possível obter a sua localização.";
+    toast(msg);
+  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
 }
 
 $("list").addEventListener("click",e=>{
   const s=e.target.closest("[data-save]"),o=e.target.closest("[data-id]"),c=e.target.closest("[data-clear]"),go=e.target.closest("[data-go]");
   if(s)toggle(+s.dataset.save);
   else if(o)openJob(+o.dataset.id);
-  else if(c){st={...st,q:"",city:CITIES[0],cid:"",area:"",type:""};fillCities();$("q").value="";$("area").value="";$("type").value="";render()}
-  else if(go){st.tab="o";render()}
+  else if(c){st={...st,q:"",city:CITIES[0],cid:"",area:"",type:"",salMin:0};syncControls();commitChange()}
+  else if(go){st.tab="o";commitChange()}
 });
-$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){st.city=b.dataset.city;st.cid="";fillCities();render()}});
-$("area").onchange=e=>{st.area=e.target.value;render()};
-$("cid").onchange=e=>{st.cid=e.target.value;render()};
-$("type").onchange=e=>{st.type=e.target.value;render()};
-$("q").addEventListener("input",e=>{st.q=e.target.value.trim();render()});
-$("form").addEventListener("submit",e=>{e.preventDefault();st.q=$("q").value.trim();render();$("filters").scrollIntoView({behavior:"smooth"})});
-$("t-o").onclick=()=>{st.tab="o";render();scrollTo({top:0,behavior:"smooth"})};
-$("t-g").onclick=()=>{st.tab="g";render();scrollTo({top:0,behavior:"smooth"})};
+$("loadmore").onclick=()=>{shown+=PAGE_SIZE;render()};
+$("near").onclick=toggleNear;
+$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){st.city=b.dataset.city;st.cid="";fillCities();commitChange()}});
+$("area").onchange=e=>{st.area=e.target.value;commitChange()};
+$("cid").onchange=e=>{st.cid=e.target.value;commitChange()};
+$("type").onchange=e=>{st.type=e.target.value;commitChange()};
+$("salmin").onchange=e=>{st.salMin=Number(e.target.value)||0;commitChange()};
+$("sort").onchange=e=>{st.sort=e.target.value;if(st.sort!=="distance")prevSort=st.sort;commitChange()};
+$("q").addEventListener("input",e=>{
+  st.q=e.target.value.trim();
+  resetPage();
+  syncURL(typingHistory);
+  typingHistory=true;
+  render();
+});
+$("q").addEventListener("blur",()=>{typingHistory=false});
+$("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  st.q=$("q").value.trim();
+  resetPage();
+  syncURL(typingHistory);
+  typingHistory=false;
+  render();
+  $("filters").scrollIntoView({behavior:"smooth"});
+});
+$("t-o").onclick=()=>{st.tab="o";commitChange();scrollTo({top:0,behavior:"smooth"})};
+$("t-g").onclick=()=>{st.tab="g";commitChange();scrollTo({top:0,behavior:"smooth"})};
 $("dclose").onclick=()=>$("dlg").close();
 $("dsave").onclick=()=>toggle(cur.id);
 $("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))$("dlg").close()});
+window.addEventListener("popstate",()=>{typingHistory=false;readURL();resetPage();syncControls();render()});
 
 /* Perfil e CV */
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -453,12 +713,14 @@ $("pfile").onchange=e=>{
   rd.readAsDataURL(f);
 };
 $("prmphoto").onclick=()=>{P.foto="";store("mare-profile",P);drawCV()};
-$("t-p").onclick=()=>{st.tab="p";render();scrollTo({top:0,behavior:"smooth"})};
+$("t-p").onclick=()=>{st.tab="p";commitChange();scrollTo({top:0,behavior:"smooth"})};
 $("dapply").onclick=()=>{
-  if(!profileOK()){$("dlg").close();st.tab="p";render();scrollTo({top:0});toast("Crie primeiro o seu perfil e CV para se candidatar");return}
+  if(!profileOK()){$("dlg").close();st.tab="p";commitChange();scrollTo({top:0});toast("Crie primeiro o seu perfil e CV para se candidatar");return}
   applied.add(cur.id);store("mare-applied",[...applied]);$("dlg").close();render();
   toast(`Candidatura a “${cur.t}” enviada com o seu CV`);
 };
+readURL();
+syncControls();
 render();
 </script>
 </body>
