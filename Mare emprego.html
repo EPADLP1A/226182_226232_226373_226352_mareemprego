@@ -19,14 +19,12 @@ button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--boia);outline-offset:2px}
 
 /* Efeito glass: apenas barras e botões */
-.glass-t,.glass-l,.btn{-webkit-backdrop-filter:blur(16px) saturate(170%);backdrop-filter:blur(16px) saturate(170%)}
-.glass-t{background:rgba(8,44,70,.58);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 24px rgba(5,25,40,.2);color:#fff}
-.glass-l{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.6);color:#fff}
-.btn{cursor:pointer;border-radius:999px;padding:11px 22px;font-weight:700;background:rgba(8,44,70,.6);border:1px solid rgba(255,255,255,.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.4);color:#fff}
-.btn.pri{background:rgba(242,92,42,.8);border-color:rgba(255,255,255,.4)}
-.btn.lite{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.45)}
+.glass-t{background-color:rgba(8,44,70,.58);color:#fff}
+.glass-l{background-color:rgba(255,255,255,.2);color:#fff}
+.btn{cursor:pointer;border-radius:999px;padding:11px 22px;font-weight:700;background-color:rgba(8,44,70,.6);color:#fff}
+.btn.pri{background-color:rgba(242,92,42,.8);border-color:rgba(255,255,255,.4)}
+.btn.lite{background-color:rgba(255,255,255,.2);border-color:rgba(255,255,255,.45)}
 .btn.icon{padding:0;width:40px;height:40px;font-size:18px;line-height:1}
-.btn:active{transform:scale(.97)}
 /* Liquid glass (web): brilho no topo, luz nas arestas e reflexo que segue o rato */
 .glass-t,.glass-l,.btn{-webkit-backdrop-filter:blur(18px) saturate(190%) brightness(1.08);backdrop-filter:blur(18px) saturate(190%) brightness(1.08);border:1px solid rgba(255,255,255,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(255,255,255,.18),inset 1px 0 0 rgba(255,255,255,.2),inset -1px 0 0 rgba(255,255,255,.2),inset 0 0 18px rgba(255,255,255,.12),0 10px 30px rgba(5,25,40,.28)}
 .glass-t,.glass-l{background-image:linear-gradient(180deg,rgba(255,255,255,.28) 0,rgba(255,255,255,.06) 38%,rgba(255,255,255,0) 60%,rgba(255,255,255,.12) 100%)}
@@ -34,7 +32,7 @@ button,input,select{font:inherit;color:inherit}
 .btn{transition:transform .2s cubic-bezier(.3,1.6,.5,1),filter .2s}
 .btn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.1)}
 .btn:active:not(:disabled){transform:scale(.95)}
-.tabs .tab[aria-current="page"]{background:rgba(255,255,255,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 0 12px rgba(255,255,255,.22),0 2px 10px rgba(5,25,40,.25)}
+.tabs .tab[aria-selected="true"]{background:rgba(255,255,255,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 0 12px rgba(255,255,255,.22),0 2px 10px rgba(5,25,40,.25)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass-t{background-color:rgba(8,44,70,.94)}.glass-l{background-color:rgba(255,255,255,.35)}}
 
 /* Barra superior */
@@ -86,7 +84,7 @@ footer{max-width:1040px;margin:36px auto 0;padding:0 20px;color:var(--mute);font
 /* Barra inferior */
 .tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;gap:4px;padding:6px;border-radius:999px}
 .tab{cursor:pointer;border:0;background:transparent;color:#fff;border-radius:999px;padding:11px 18px;font-weight:700}
-.tab[aria-current="page"]{background:rgba(255,255,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.tab[aria-selected="true"]{background:rgba(255,255,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
 
 /* Detalhe */
 dialog{border:0;padding:0;border-radius:20px;width:min(560px,calc(100% - 24px));max-height:calc(100% - 40px);background:var(--surf);color:var(--ink);overflow:hidden}
@@ -140,6 +138,7 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
 .cvh img{flex:none;width:92px;height:92px;border-radius:50%;object-fit:cover}
 .cvh>div{min-width:0}
 @media print{.bar,.tabs,.hero,footer,.toast,.head,.filters,.list,#pform,.pact,#apps,.pside h3,dialog{display:none!important}body{background:#fff;color:#000;padding:0}.pgrid{display:block}.pside{position:static}.cv{border:0;padding:0;background:#fff;color:#000}.cv h4{border-color:#999}.cvt,.cvc{color:#000}}
+@media (prefers-reduced-transparency:reduce){.glass-t,.glass-l,.btn{-webkit-backdrop-filter:none;backdrop-filter:none;background-image:none;box-shadow:none}.glass-t{background-color:#0B3C5D}.btn,.btn.lite{background-color:#0B3C5D}.btn.pri{background-color:#C2410C}.tabs .tab[aria-selected="true"]{background:rgba(255,255,255,.28)}:root[data-theme="dark"] .glass-t,:root:not([data-theme="light"]) .glass-t{background-color:#030814}:root[data-theme="dark"] .btn.pri,:root:not([data-theme="light"]) .btn.pri{background-color:#2F6BFF}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}.btn:active{transform:none}}
 </style>
 </head>
@@ -174,7 +173,7 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
       <select id="type" aria-label="Tipo de contrato"></select>
     </div>
   </div>
-  <div class="head" id="head"><h2 id="title">Ofertas recentes</h2><span id="count"></span></div>
+  <div class="head" id="head"><h2 id="title">Ofertas recentes</h2><span id="count" aria-live="polite"></span></div>
   <div class="list" id="list"></div>
   <section id="profile" hidden>
     <div class="head"><h2>O meu perfil e CV</h2><span>Guardado automaticamente neste dispositivo</span></div>
@@ -221,10 +220,10 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
 
 <footer>Ofertas de exemplo, criadas para demonstração. Ligue o site à sua fonte de dados para publicar vagas reais.</footer>
 
-<nav class="tabs glass-t" aria-label="Navegação principal">
-  <button class="tab" id="t-o" aria-current="page">Ofertas</button>
-  <button class="tab" id="t-g">Guardadas</button>
-  <button class="tab" id="t-p">Perfil</button>
+<nav class="tabs glass-t" role="tablist" aria-label="Navegação principal">
+  <button class="tab" role="tab" id="t-o" aria-selected="true">Ofertas</button>
+  <button class="tab" role="tab" id="t-g">Guardadas</button>
+  <button class="tab" role="tab" id="t-p">Perfil</button>
 </nav>
 
 <dialog id="dlg" aria-labelledby="dt">
@@ -238,19 +237,22 @@ dialog::backdrop{background:rgba(5,20,30,.55)}
 <div class="toast glass-t" id="toast" role="status" hidden></div>
 
 <script>
+const BASE="2026-11-25";
+const isoMinus=n=>{const x=new Date(BASE+"T00:00:00Z");x.setUTCDate(x.getUTCDate()-n);return x.toISOString().slice(0,10)};
+const ago=dt=>{const n=Math.max(0,Math.round((Date.now()-Date.parse(dt+"T00:00:00Z"))/864e5));return n===0?"Hoje":n===1?"Há 1 dia":`Há ${n} dias`};
 const J=[
-{id:1,t:"Cozinheiro/a",c:"Hotel Praia Azul",m:"Sesimbra",a:"Hotelaria e Turismo",k:"Sem termo",r:"Presencial",s:"1 100–1 350 €/mês",d:1,p:"Integre a equipa de cozinha de um hotel com vista para o mar, com horário rotativo e refeições incluídas.",q:["Experiência em cozinha tradicional portuguesa","Disponibilidade para fins de semana","Carta de HACCP (valorizada)"]},
-{id:2,t:"Operador/a de armazém",c:"Logística Sado Sul",m:"Palmela",a:"Logística",k:"Termo certo",r:"Presencial",s:"950–1 050 €/mês",d:2,p:"Receção, arrumação e expedição de mercadorias num centro logístico perto da A12.",q:["Carta de empilhador (valorizada)","Capacidade de trabalho em equipa","Turnos de manhã e tarde"]},
-{id:3,t:"Técnico/a de manutenção naval",c:"Estaleiros do Estuário",m:"Setúbal",a:"Mar e Indústria",k:"Sem termo",r:"Presencial",s:"1 400–1 800 €/mês",d:3,p:"Manutenção e reparação de embarcações de pesca e recreio no estaleiro do Sado.",q:["Formação em mecânica ou eletromecânica","Experiência com motores marítimos","Gosto por trabalho prático"]},
-{id:4,t:"Enfermeiro/a",c:"Clínica Sado Saúde",m:"Setúbal",a:"Saúde",k:"Sem termo",r:"Presencial",s:"1 600–1 900 €/mês",d:1,p:"Cuidados de enfermagem em consulta externa e pequenos procedimentos.",q:["Cédula profissional ativa","Experiência em cuidados de saúde primários","Boa capacidade de comunicação"]},
-{id:5,t:"Programador/a web",c:"Atlântico Digital",m:"Almada",a:"Tecnologia",k:"Sem termo",r:"Híbrido",s:"1 900–2 600 €/mês",d:4,p:"Desenvolvimento de aplicações web para clientes da região, com 3 dias de teletrabalho.",q:["JavaScript e uma framework moderna","Noções de bases de dados","Inglês técnico"]},
-{id:6,t:"Assistente de loja",c:"Mercado Central Moda",m:"Seixal",a:"Comércio",k:"Termo certo",r:"Presencial",s:"870–950 €/mês",d:5,p:"Atendimento ao cliente, reposição e caixa numa loja de moda no centro comercial.",q:["Simpatia e boa apresentação","Disponibilidade para horário de loja","Experiência em vendas (valorizada)"]},
-{id:7,t:"Auxiliar de ação educativa",c:"Colégio Horizonte",m:"Barreiro",a:"Educação",k:"Termo certo",r:"Presencial",s:"900–1 000 €/mês",d:2,p:"Apoio às salas e aos recreios de um colégio com pré-escolar e 1.º ciclo.",q:["12.º ano completo","Paciência e sentido de responsabilidade","Registo criminal limpo"]},
-{id:8,t:"Guia turístico/a na Arrábida",c:"Rotas da Arrábida",m:"Setúbal",a:"Hotelaria e Turismo",k:"Part-time",r:"Presencial",s:"700–950 €/mês",d:6,p:"Conduza visitas a pé e de barco pela Serra da Arrábida e pelo estuário do Sado.",q:["Português e inglês fluentes","Conhecimento da região","Disponibilidade ao fim de semana"]},
-{id:9,t:"Eletricista",c:"Construções Ribeira",m:"Montijo",a:"Construção",k:"Sem termo",r:"Presencial",s:"1 200–1 500 €/mês",d:3,p:"Instalações elétricas em obras residenciais e de reabilitação na margem sul.",q:["Certificação profissional DGEG","Carta de condução B","Experiência mínima de 2 anos"]},
-{id:10,t:"Técnico/a de qualidade alimentar",c:"Conservas do Sado",m:"Setúbal",a:"Mar e Indústria",k:"Sem termo",r:"Presencial",s:"1 300–1 600 €/mês",d:7,p:"Controlo de qualidade e segurança alimentar numa unidade de conservas de peixe.",q:["Licenciatura em Engenharia Alimentar ou afim","Conhecimento de HACCP e ISO 22000","Rigor e atenção ao detalhe"]},
-{id:11,t:"Administrativo/a",c:"Transportes Alcochete",m:"Alcochete",a:"Administrativo",k:"Termo certo",r:"Híbrido",s:"1 000–1 200 €/mês",d:2,p:"Faturação, receção de documentos e contacto com clientes numa empresa de transportes.",q:["Domínio de Excel","Experiência em faturação","Boa organização"]},
-{id:12,t:"Motorista de pesados",c:"Moita Express",m:"Moita",a:"Logística",k:"Sem termo",r:"Presencial",s:"1 300–1 700 €/mês",d:1,p:"Transporte nacional de mercadorias, com regresso ao fim do dia na maioria das rotas.",q:["Carta C+E e CAM válidos","Cartão de tacógrafo","Experiência comprovada"]}
+{id:1,t:"Cozinheiro/a",c:"Hotel Praia Azul",m:"Sesimbra",a:"Hotelaria e Turismo",k:"Sem termo",r:"Presencial",s:"1 100–1 350 €/mês",dt:isoMinus(1),p:"Integre a equipa de cozinha de um hotel com vista para o mar, com horário rotativo e refeições incluídas.",q:["Experiência em cozinha tradicional portuguesa","Disponibilidade para fins de semana","Carta de HACCP (valorizada)"]},
+{id:2,t:"Operador/a de armazém",c:"Logística Sado Sul",m:"Palmela",a:"Logística",k:"Termo certo",r:"Presencial",s:"950–1 050 €/mês",dt:isoMinus(2),p:"Receção, arrumação e expedição de mercadorias num centro logístico perto da A12.",q:["Carta de empilhador (valorizada)","Capacidade de trabalho em equipa","Turnos de manhã e tarde"]},
+{id:3,t:"Técnico/a de manutenção naval",c:"Estaleiros do Estuário",m:"Setúbal",a:"Mar e Indústria",k:"Sem termo",r:"Presencial",s:"1 400–1 800 €/mês",dt:isoMinus(3),p:"Manutenção e reparação de embarcações de pesca e recreio no estaleiro do Sado.",q:["Formação em mecânica ou eletromecânica","Experiência com motores marítimos","Gosto por trabalho prático"]},
+{id:4,t:"Enfermeiro/a",c:"Clínica Sado Saúde",m:"Setúbal",a:"Saúde",k:"Sem termo",r:"Presencial",s:"1 600–1 900 €/mês",dt:isoMinus(1),p:"Cuidados de enfermagem em consulta externa e pequenos procedimentos.",q:["Cédula profissional ativa","Experiência em cuidados de saúde primários","Boa capacidade de comunicação"]},
+{id:5,t:"Programador/a web",c:"Atlântico Digital",m:"Almada",a:"Tecnologia",k:"Sem termo",r:"Híbrido",s:"1 900–2 600 €/mês",dt:isoMinus(4),p:"Desenvolvimento de aplicações web para clientes da região, com 3 dias de teletrabalho.",q:["JavaScript e uma framework moderna","Noções de bases de dados","Inglês técnico"]},
+{id:6,t:"Assistente de loja",c:"Mercado Central Moda",m:"Seixal",a:"Comércio",k:"Termo certo",r:"Presencial",s:"870–950 €/mês",dt:isoMinus(5),p:"Atendimento ao cliente, reposição e caixa numa loja de moda no centro comercial.",q:["Simpatia e boa apresentação","Disponibilidade para horário de loja","Experiência em vendas (valorizada)"]},
+{id:7,t:"Auxiliar de ação educativa",c:"Colégio Horizonte",m:"Barreiro",a:"Educação",k:"Termo certo",r:"Presencial",s:"900–1 000 €/mês",dt:isoMinus(2),p:"Apoio às salas e aos recreios de um colégio com pré-escolar e 1.º ciclo.",q:["12.º ano completo","Paciência e sentido de responsabilidade","Registo criminal limpo"]},
+{id:8,t:"Guia turístico/a na Arrábida",c:"Rotas da Arrábida",m:"Setúbal",a:"Hotelaria e Turismo",k:"Part-time",r:"Presencial",s:"700–950 €/mês",dt:isoMinus(6),p:"Conduza visitas a pé e de barco pela Serra da Arrábida e pelo estuário do Sado.",q:["Português e inglês fluentes","Conhecimento da região","Disponibilidade ao fim de semana"]},
+{id:9,t:"Eletricista",c:"Construções Ribeira",m:"Montijo",a:"Construção",k:"Sem termo",r:"Presencial",s:"1 200–1 500 €/mês",dt:isoMinus(3),p:"Instalações elétricas em obras residenciais e de reabilitação na margem sul.",q:["Certificação profissional DGEG","Carta de condução B","Experiência mínima de 2 anos"]},
+{id:10,t:"Técnico/a de qualidade alimentar",c:"Conservas do Sado",m:"Setúbal",a:"Mar e Indústria",k:"Sem termo",r:"Presencial",s:"1 300–1 600 €/mês",dt:isoMinus(7),p:"Controlo de qualidade e segurança alimentar numa unidade de conservas de peixe.",q:["Licenciatura em Engenharia Alimentar ou afim","Conhecimento de HACCP e ISO 22000","Rigor e atenção ao detalhe"]},
+{id:11,t:"Administrativo/a",c:"Transportes Alcochete",m:"Alcochete",a:"Administrativo",k:"Termo certo",r:"Híbrido",s:"1 000–1 200 €/mês",dt:isoMinus(2),p:"Faturação, receção de documentos e contacto com clientes numa empresa de transportes.",q:["Domínio de Excel","Experiência em faturação","Boa organização"]},
+{id:12,t:"Motorista de pesados",c:"Moita Express",m:"Moita",a:"Logística",k:"Sem termo",r:"Presencial",s:"1 300–1 700 €/mês",dt:isoMinus(1),p:"Transporte nacional de mercadorias, com regresso ao fim do dia na maioria das rotas.",q:["Carta C+E e CAM válidos","Cartão de tacógrafo","Experiência comprovada"]}
 ];
 const CITIES=["Todo o país","Norte","Centro","Lisboa e Vale do Tejo","Alentejo","Algarve","Madeira","Açores"];
 const LV="Lisboa e Vale do Tejo",NO="Norte",CE="Centro";
@@ -274,7 +276,7 @@ const REG={"Setúbal":LV,"Palmela":LV,"Sesimbra":LV,"Almada":LV,"Seixal":LV,"Bar
 [28,"Animador/a turístico/a","Douro Vivo","Peso da Régua","Hotelaria e Turismo","Termo certo","Presencial","900–1 100 €/mês",4,"Visitas a quintas, provas de vinho e passeios de barco no Douro.","Português e inglês|Simpatia e comunicação|Disponibilidade ao fim de semana"],
 [29,"Analista de dados","Foz Analytics","Porto","Tecnologia","Sem termo","Híbrido","1 800–2 400 €/mês",2,"Construa relatórios e dashboards para equipas de vendas e operações.","SQL e Excel avançado|Experiência com Power BI ou similar|Pensamento analítico"],
 [30,"Designer de UX","Tejo Studio","Lisboa","Tecnologia","Sem termo","Híbrido","1 900–2 500 €/mês",1,"Pesquisa, protótipos e testes para produtos digitais de clientes nacionais.","Portefólio de produto|Domínio de Figma|Experiência com testes de utilizador"]
-].forEach(r=>J.push({id:r[0],t:r[1],c:r[2],m:r[3],a:r[4],k:r[5],r:r[6],s:r[7],d:r[8],p:r[9],q:r[10].split("|")}));
+].forEach(r=>J.push({id:r[0],t:r[1],c:r[2],m:r[3],a:r[4],k:r[5],r:r[6],s:r[7],dt:isoMinus(r[8]),p:r[9],q:r[10].split("|")}));
 const CL={"Norte":"Porto,Braga,Guimarães,Vila Nova de Gaia,Matosinhos,Maia,Vila do Conde,Póvoa de Varzim,Famalicão,Viana do Castelo,Vila Real,Bragança,Chaves,Peso da Régua,Barcelos,Amarante,Paredes","Centro":"Coimbra,Aveiro,Viseu,Leiria,Guarda,Castelo Branco,Covilhã,Figueira da Foz,Marinha Grande,Caldas da Rainha,Tomar","Lisboa e Vale do Tejo":"Lisboa,Setúbal,Almada,Seixal,Barreiro,Amadora,Sintra,Cascais,Oeiras,Loures,Odivelas,Vila Franca de Xira,Montijo,Moita,Palmela,Sesimbra,Alcochete,Santarém,Torres Vedras,Abrantes","Alentejo":"Évora,Beja,Portalegre,Sines,Elvas,Santiago do Cacém,Estremoz","Algarve":"Faro,Portimão,Lagos,Albufeira,Loulé,Tavira,Olhão,Silves","Madeira":"Funchal,Câmara de Lobos,Machico","Açores":"Ponta Delgada,Angra do Heroísmo,Horta,Ribeira Grande"};
 Object.entries(CL).forEach(([g,s])=>s.split(",").forEach(c=>REG[c]=g));
 const TP=[
@@ -284,14 +286,15 @@ const TP=[
 ["Operador/a de logística","Armazéns Atlântico","Logística","Termo certo","950–1 100 €/mês","Preparação de encomendas e carga e descarga num armazém regional.","Capacidade física|Trabalho em equipa|Carta de empilhador (valorizada)"],
 ["Auxiliar de ação educativa","Escola Nova","Educação","Termo certo","900–1 000 €/mês","Apoio às salas e aos recreios de uma escola com pré-escolar e 1.º ciclo.","12.º ano completo|Responsabilidade e paciência|Registo criminal limpo"]
 ];
-Object.keys(REG).forEach((c,i)=>{if(J.some(j=>j.m===c))return;const t=TP[i%TP.length];J.push({id:100+i,t:t[0],c:t[1],m:c,a:t[2],k:t[3],r:"Presencial",s:t[4],d:1+i%7,p:t[5],q:t[6].split("|")})});
+Object.keys(REG).forEach((c,i)=>{if(J.some(j=>j.m===c))return;const t=TP[i%TP.length];J.push({id:100+i,t:t[0],c:t[1],m:c,a:t[2],k:t[3],r:"Presencial",s:t[4],dt:isoMinus(1+i%7),p:t[5],q:t[6].split("|")})});
 const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let st={q:"",city:CITIES[0],area:"",type:"",cid:"",tab:"o"},cur=null,saved=new Set();
 try{saved=new Set(JSON.parse(localStorage.getItem("mare-saved")||"[]"))}catch(e){}
 const persist=()=>{try{localStorage.setItem("mare-saved",JSON.stringify([...saved]))}catch(e){}};
 const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 
-function fillSelect(el,first,vals){el.innerHTML=`<option value="">${first}</option>`+vals.map(v=>`<option>${v}</option>`).join("")}
+function fillSelect(el,first,vals){el.innerHTML=`<option value="">${first}</option>`+vals.map(v=>`<option>${esc(v)}</option>`).join("")}
 fillSelect($("area"),"Todas as áreas",[...new Set(J.map(j=>j.a))].sort());
 fillSelect($("type"),"Todos os contratos",[...new Set(J.map(j=>j.k))]);
 function fillCities(){
@@ -304,13 +307,13 @@ function fillCities(){
 fillCities();
 $("chips").innerHTML=CITIES.map(c=>`<button class="chip" data-city="${c}" aria-pressed="${c===st.city}">${c}</button>`).join("");
 
-const card=j=>`<article class="card"><button class="open" data-id="${j.id}">${j.t}</button><p class="co">${j.c}, ${j.m}</p><div class="tags"><span class="tag">${j.k}</span><span class="tag">${j.r}</span><span class="tag">${j.a}</span>${applied.has(j.id)?`<span class="tag ok">Candidatado</span>`:""}</div><p class="sal">${j.s}<small>Há ${j.d} ${j.d>1?"dias":"dia"}</small></p><button class="btn icon save" data-save="${j.id}" aria-pressed="${saved.has(j.id)}" aria-label="${saved.has(j.id)?"Remover das guardadas":"Guardar oferta"}">${saved.has(j.id)?"♥":"♡"}</button></article>`;
+const card=j=>`<article class="card"><button class="open" data-id="${j.id}">${esc(j.t)}</button><p class="co">${esc(j.c)}, ${esc(j.m)}</p><div class="tags"><span class="tag">${esc(j.k)}</span><span class="tag">${esc(j.r)}</span><span class="tag">${esc(j.a)}</span>${applied.has(j.id)?`<span class="tag ok">Candidatado</span>`:""}</div><p class="sal">${esc(j.s)}<small>${ago(j.dt)}</small></p><button class="btn icon save" data-save="${j.id}" aria-pressed="${saved.has(j.id)}" aria-label="${saved.has(j.id)?"Remover das guardadas":"Guardar oferta"}">${saved.has(j.id)?"♥":"♡"}</button></article>`;
 
 function render(){
   const g=st.tab==="g";
-  const p=st.tab==="p";$("hero").hidden=g||p;$("filters").hidden=g||p;$("profile").hidden=!p;$("head").hidden=p;$("list").hidden=p;$("t-p").setAttribute("aria-current",p?"page":"false");if(p)renderProfile();
-  $("t-o").setAttribute("aria-current",g||p?"false":"page");
-  $("t-g").setAttribute("aria-current",g?"page":"false");
+  const p=st.tab==="p";$("hero").hidden=g||p;$("filters").hidden=g||p;$("profile").hidden=!p;$("head").hidden=p;$("list").hidden=p;$("t-p").setAttribute("aria-selected",p?"true":"false");if(p)renderProfile();
+  $("t-o").setAttribute("aria-selected",g||p?"false":"true");
+  $("t-g").setAttribute("aria-selected",g?"true":"false");
   $("t-g").textContent=saved.size?`Guardadas (${saved.size})`:"Guardadas";
   document.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.city===st.city));
   let r=J.filter(j=>{
@@ -318,7 +321,7 @@ function render(){
     const hay=norm([j.t,j.c,j.a,j.m].join(" "));
     return (!st.q||norm(st.q).split(/\s+/).every(w=>hay.includes(w)))
       &&(st.city===CITIES[0]||REG[j.m]===st.city)&&(!st.cid||j.m===st.cid)&&(!st.area||j.a===st.area)&&(!st.type||j.k===st.type);
-  }).sort((a,b)=>a.d-b.d);
+  }).sort((a,b)=>b.dt.localeCompare(a.dt));
   $("title").textContent=g?"Ofertas guardadas":"Ofertas recentes";
   $("count").textContent=g?"":`${r.length} ${r.length===1?"oferta":"ofertas"}${st.cid?" em "+st.cid:st.city===CITIES[0]?" em Portugal":" na região "+st.city}`;
   $("list").innerHTML=r.length?r.map(card).join(""):(g
@@ -335,7 +338,7 @@ function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout
 
 function openJob(id){
   cur=J.find(j=>j.id===id);
-  $("dbody").innerHTML=`<h2 id="dt">${cur.t}</h2><p class="co">${cur.c}, ${cur.m}</p><div class="tags"><span class="tag">${cur.k}</span><span class="tag">${cur.r}</span><span class="tag">${cur.a}</span></div><p class="sal" style="margin-top:14px">${cur.s}</p><h3>Sobre a oferta</h3><p>${cur.p}</p><h3>Requisitos</h3><ul>${cur.q.map(x=>`<li>${x}</li>`).join("")}</ul><p class="note">${noteText()}</p>`;
+  $("dbody").innerHTML=`<h2 id="dt">${esc(cur.t)}</h2><p class="co">${esc(cur.c)}, ${esc(cur.m)}</p><div class="tags"><span class="tag">${esc(cur.k)}</span><span class="tag">${esc(cur.r)}</span><span class="tag">${esc(cur.a)}</span></div><p class="sal" style="margin-top:14px">${esc(cur.s)}</p><h3>Sobre a oferta</h3><p>${esc(cur.p)}</p><h3>Requisitos</h3><ul>${cur.q.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><p class="note">${noteText()}</p>`;
   syncSave();syncApply();$("dlg").showModal();$("dbody").scrollTop=0;
 }
 
@@ -359,7 +362,6 @@ $("dsave").onclick=()=>toggle(cur.id);
 $("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))$("dlg").close()});
 
 /* Perfil e CV */
-const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
 const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let P=Object.assign({nome:"",email:"",tel:"",cidade:"",titulo:"",resumo:"",skills:"",langs:"",exp:[],edu:[]},load("mare-profile",{}));
